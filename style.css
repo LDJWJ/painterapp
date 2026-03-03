@@ -1,0 +1,258 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #1a1a2e;
+    color: #eee;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Toolbar */
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background-color: #16213e;
+    border-bottom: 1px solid #0f3460;
+    flex-wrap: wrap;
+}
+
+.tool-group,
+.option-group,
+.action-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.separator {
+    width: 1px;
+    height: 32px;
+    background-color: #0f3460;
+    margin: 0 8px;
+}
+
+/* Tool Buttons */
+.tool-btn,
+.action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background-color: #0f3460;
+    color: #eee;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 60px;
+}
+
+.tool-btn:hover,
+.action-btn:hover {
+    background-color: #1a4a7a;
+}
+
+.tool-btn.active {
+    background-color: #e94560;
+}
+
+.tool-btn .icon,
+.action-btn .icon {
+    font-size: 18px;
+    margin-bottom: 2px;
+}
+
+.tool-btn .label,
+.action-btn .label {
+    font-size: 11px;
+}
+
+/* Color Options */
+.option-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #aaa;
+}
+
+#colorPicker {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background: none;
+}
+
+.preset-colors {
+    display: flex;
+    gap: 4px;
+}
+
+.color-preset {
+    width: 24px;
+    height: 24px;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.color-preset:hover {
+    transform: scale(1.1);
+}
+
+.color-preset.active {
+    border-color: #fff;
+}
+
+/* Range Inputs */
+input[type="range"] {
+    width: 80px;
+    height: 4px;
+    -webkit-appearance: none;
+    background: #0f3460;
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #e94560;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+#lineWidthValue,
+#blockSizeValue {
+    font-size: 11px;
+    color: #888;
+    min-width: 30px;
+}
+
+/* Canvas Container */
+.canvas-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #0f0f23;
+    position: relative;
+    overflow: auto;
+    padding: 20px;
+}
+
+#mainCanvas {
+    background-color: #fff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    cursor: crosshair;
+    display: none;
+}
+
+.placeholder {
+    text-align: center;
+    color: #666;
+    user-select: none;
+}
+
+.placeholder p {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.placeholder .shortcut {
+    font-size: 14px;
+    color: #444;
+    background-color: #1a1a2e;
+    padding: 4px 12px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.placeholder.hidden {
+    display: none;
+}
+
+/* Status Bar */
+.status-bar {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 16px;
+    background-color: #16213e;
+    border-top: 1px solid #0f3460;
+    font-size: 12px;
+    color: #888;
+}
+
+/* Selection Rectangle */
+.selection-rect {
+    position: absolute;
+    border: 2px dashed #e94560;
+    background-color: rgba(233, 69, 96, 0.1);
+    pointer-events: none;
+}
+
+/* Toast Notification */
+.toast {
+    position: fixed;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #16213e;
+    color: #eee;
+    padding: 12px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    animation: fadeInOut 2s ease;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .toolbar {
+        padding: 8px;
+        gap: 8px;
+    }
+
+    .tool-btn,
+    .action-btn {
+        padding: 6px 8px;
+        min-width: 50px;
+    }
+
+    .separator {
+        display: none;
+    }
+
+    .option-label {
+        font-size: 11px;
+    }
+
+    input[type="range"] {
+        width: 60px;
+    }
+}

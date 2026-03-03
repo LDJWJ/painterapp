@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painter App - 이미지 편집기</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="toolbar">
+            <div class="tool-group">
+                <button class="tool-btn active" data-tool="select" title="선택 (영역 선택)">
+                    <span class="icon">◻</span>
+                    <span class="label">선택</span>
+                </button>
+                <button class="tool-btn" data-tool="rectangle" title="사각형 그리기">
+                    <span class="icon">▭</span>
+                    <span class="label">사각형</span>
+                </button>
+                <button class="tool-btn" data-tool="arrow" title="화살표 그리기">
+                    <span class="icon">→</span>
+                    <span class="label">화살표</span>
+                </button>
+                <button class="tool-btn" data-tool="mosaic" title="모자이크 처리">
+                    <span class="icon">▦</span>
+                    <span class="label">모자이크</span>
+                </button>
+                <button class="tool-btn" data-tool="erase" title="영역 삭제">
+                    <span class="icon">⌫</span>
+                    <span class="label">삭제</span>
+                </button>
+            </div>
+
+            <div class="separator"></div>
+
+            <div class="option-group">
+                <label class="option-label">
+                    색상
+                    <input type="color" id="colorPicker" value="#ff0000">
+                </label>
+                <div class="preset-colors">
+                    <button class="color-preset" data-color="#ff0000" style="background-color: #ff0000;" title="빨강"></button>
+                    <button class="color-preset" data-color="#0066ff" style="background-color: #0066ff;" title="파랑"></button>
+                    <button class="color-preset" data-color="#00cc00" style="background-color: #00cc00;" title="초록"></button>
+                    <button class="color-preset" data-color="#000000" style="background-color: #000000;" title="검정"></button>
+                </div>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">
+                    두께
+                    <input type="range" id="lineWidth" min="1" max="10" value="3">
+                    <span id="lineWidthValue">3px</span>
+                </label>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">
+                    블록 크기
+                    <input type="range" id="blockSize" min="10" max="30" value="15">
+                    <span id="blockSizeValue">15px</span>
+                </label>
+            </div>
+
+            <div class="separator"></div>
+
+            <div class="action-group">
+                <button class="action-btn" id="undoBtn" title="실행 취소 (Ctrl+Z)">
+                    <span class="icon">↶</span>
+                    <span class="label">취소</span>
+                </button>
+                <button class="action-btn" id="copyBtn" title="클립보드에 복사 (Ctrl+A → Ctrl+C)">
+                    <span class="icon">📋</span>
+                    <span class="label">복사</span>
+                </button>
+                <button class="action-btn" id="downloadBtn" title="이미지 다운로드">
+                    <span class="icon">⬇</span>
+                    <span class="label">다운로드</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="mainCanvas"></canvas>
+            <div class="placeholder" id="placeholder">
+                <p>📷 이미지를 붙여넣으세요</p>
+                <p class="shortcut">Ctrl + V</p>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <span id="statusText">이미지를 붙여넣어 시작하세요</span>
+            <span id="imageSize"></span>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
