@@ -5,6 +5,8 @@ class PainterApp {
         // Canvas elements
         this.canvas = document.getElementById('mainCanvas');
         this.ctx = this.canvas.getContext('2d');
+        this.overlayCanvas = document.getElementById('overlayCanvas');
+        this.overlayCtx = this.overlayCanvas.getContext('2d');
         this.placeholder = document.getElementById('placeholder');
 
         // Tool buttons
@@ -124,10 +126,13 @@ class PainterApp {
                 this.baseImage = img;
                 this.canvas.width = img.width;
                 this.canvas.height = img.height;
+                this.overlayCanvas.width = img.width;
+                this.overlayCanvas.height = img.height;
                 this.ctx.drawImage(img, 0, 0);
                 this.hasImage = true;
                 this.placeholder.classList.add('hidden');
                 this.canvas.style.display = 'block';
+                this.overlayCanvas.style.display = 'block';
                 this.saveState();
                 this.updateStatus('이미지 로드됨');
                 this.imageSize.textContent = `${img.width} x ${img.height}`;
@@ -143,6 +148,7 @@ class PainterApp {
             btn.classList.toggle('active', btn.dataset.tool === tool);
         });
         this.selection = null;
+        this.clearOverlay();
         this.updateStatus(`도구: ${this.getToolName(tool)}`);
     }
 
@@ -189,10 +195,6 @@ class PainterApp {
         if (!this.isDrawing || !this.hasImage) return;
 
         const coords = this.getCanvasCoords(e);
-
-        // Restore temp state for preview
-        this.ctx.putImageData(this.tempState, 0, 0);
-
         const width = coords.x - this.startX;
         const height = coords.y - this.startY;
 
@@ -200,12 +202,16 @@ class PainterApp {
             case 'select':
             case 'mosaic':
             case 'erase':
+                // 선택 미리보기는 오버레이 캔버스에만 그림
+                this.clearOverlay();
                 this.drawSelectionPreview(this.startX, this.startY, width, height);
                 break;
             case 'rectangle':
+                this.ctx.putImageData(this.tempState, 0, 0);
                 this.drawRectangle(this.startX, this.startY, width, height);
                 break;
             case 'arrow':
+                this.ctx.putImageData(this.tempState, 0, 0);
                 this.drawArrow(this.startX, this.startY, coords.x, coords.y);
                 break;
         }
@@ -216,15 +222,13 @@ class PainterApp {
 
         this.isDrawing = false;
         const coords = this.getCanvasCoords(e);
-
         const width = coords.x - this.startX;
         const height = coords.y - this.startY;
 
-        // Restore temp state
-        this.ctx.putImageData(this.tempState, 0, 0);
-
         switch (this.currentTool) {
             case 'select':
+                // 선택 영역은 오버레이에 유지 (메인 캔버스 건드리지 않음)
+                this.clearOverlay();
                 this.selection = {
                     x: Math.min(this.startX, coords.x),
                     y: Math.min(this.startY, coords.y),
@@ -235,34 +239,43 @@ class PainterApp {
                 this.updateStatus('영역 선택됨 - DELETE 키로 삭제 또는 모자이크 도구 사용');
                 break;
             case 'rectangle':
+                this.ctx.putImageData(this.tempState, 0, 0);
                 this.drawRectangle(this.startX, this.startY, width, height);
                 this.saveState();
                 break;
             case 'arrow':
+                this.ctx.putImageData(this.tempState, 0, 0);
                 this.drawArrow(this.startX, this.startY, coords.x, coords.y);
                 this.saveState();
                 break;
             case 'mosaic':
+                this.clearOverlay();
+                this.ctx.putImageData(this.tempState, 0, 0);
                 this.applyMosaic(this.startX, this.startY, width, height);
                 this.saveState();
                 break;
             case 'erase':
+                this.clearOverlay();
+                this.ctx.putImageData(this.tempState, 0, 0);
                 this.applyErase(this.startX, this.startY, width, height);
                 this.saveState();
                 break;
         }
     }
 
-    drawSelectionPreview(x, y, width, height) {
-        this.ctx.strokeStyle = '#e94560';
-        this.ctx.lineWidth = 2;
-        this.ctx.setLineDash([5, 5]);
-        this.ctx.strokeRect(x, y, width, height);
-        this.ctx.setLineDash([]);
+    clearOverlay() {
+        this.overlayCtx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
+    }
 
-        // Fill with semi-transparent
-        this.ctx.fillStyle = 'rgba(233, 69, 96, 0.1)';
-        this.ctx.fillRect(x, y, width, height);
+    drawSelectionPreview(x, y, width, height) {
+        // 오버레이 캔버스에 그려서 메인 캔버스 이미지 데이터를 오염시키지 않음
+        this.overlayCtx.strokeStyle = '#e94560';
+        this.overlayCtx.lineWidth = 2;
+        this.overlayCtx.setLineDash([5, 5]);
+        this.overlayCtx.strokeRect(x, y, width, height);
+        this.overlayCtx.setLineDash([]);
+        this.overlayCtx.fillStyle = 'rgba(233, 69, 96, 0.1)';
+        this.overlayCtx.fillRect(x, y, width, height);
     }
 
     drawRectangle(x, y, width, height) {
@@ -303,25 +316,34 @@ class PainterApp {
     }
 
     applyMosaic(x, y, width, height) {
-        const startX = Math.min(x, x + width);
-        const startY = Math.min(y, y + height);
-        const w = Math.abs(width);
-        const h = Math.abs(height);
+        const startX = Math.floor(Math.min(x, x + width));
+        const startY = Math.floor(Math.min(y, y + height));
+        const w = Math.floor(Math.abs(width));
+        const h = Math.floor(Math.abs(height));
 
         if (w < 2 || h < 2) return;
 
-        const imageData = this.ctx.getImageData(startX, startY, w, h);
+        // Clamp to canvas boundaries
+        const clampedX = Math.max(0, startX);
+        const clampedY = Math.max(0, startY);
+        const clampedW = Math.min(w - (clampedX - startX), this.canvas.width - clampedX);
+        const clampedH = Math.min(h - (clampedY - startY), this.canvas.height - clampedY);
+
+        if (clampedW <= 0 || clampedH <= 0) return;
+
+        const imageData = this.ctx.getImageData(clampedX, clampedY, clampedW, clampedH);
         const data = imageData.data;
         const blockSize = this.blockSize;
+        const stride = imageData.width;
 
-        for (let by = 0; by < h; by += blockSize) {
-            for (let bx = 0; bx < w; bx += blockSize) {
+        for (let by = 0; by < clampedH; by += blockSize) {
+            for (let bx = 0; bx < clampedW; bx += blockSize) {
                 let r = 0, g = 0, b = 0, count = 0;
 
                 // Calculate average color for block
-                for (let py = by; py < by + blockSize && py < h; py++) {
-                    for (let px = bx; px < bx + blockSize && px < w; px++) {
-                        const i = (py * w + px) * 4;
+                for (let py = by; py < by + blockSize && py < clampedH; py++) {
+                    for (let px = bx; px < bx + blockSize && px < clampedW; px++) {
+                        const i = (py * stride + px) * 4;
                         r += data[i];
                         g += data[i + 1];
                         b += data[i + 2];
@@ -334,9 +356,9 @@ class PainterApp {
                 b = Math.round(b / count);
 
                 // Apply average color to block
-                for (let py = by; py < by + blockSize && py < h; py++) {
-                    for (let px = bx; px < bx + blockSize && px < w; px++) {
-                        const i = (py * w + px) * 4;
+                for (let py = by; py < by + blockSize && py < clampedH; py++) {
+                    for (let px = bx; px < bx + blockSize && px < clampedW; px++) {
+                        const i = (py * stride + px) * 4;
                         data[i] = r;
                         data[i + 1] = g;
                         data[i + 2] = b;
@@ -345,7 +367,7 @@ class PainterApp {
             }
         }
 
-        this.ctx.putImageData(imageData, startX, startY);
+        this.ctx.putImageData(imageData, clampedX, clampedY);
         this.updateStatus('모자이크 적용됨');
     }
 
@@ -478,6 +500,7 @@ class PainterApp {
         this.ctx.fillRect(x, y, width, height);
         this.saveState();
         this.selection = null;
+        this.clearOverlay();
         this.updateStatus('선택 영역 삭제됨');
         this.showToast('선택 영역이 삭제되었습니다');
     }

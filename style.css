@@ -159,10 +159,25 @@ input[type="range"]::-webkit-slider-thumb {
     padding: 20px;
 }
 
+.canvas-wrapper {
+    position: relative;
+    display: inline-block;
+    line-height: 0;
+}
+
 #mainCanvas {
     background-color: #fff;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     cursor: crosshair;
+    display: none;
+}
+
+#overlayCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: crosshair;
+    pointer-events: none;
     display: none;
 }
 
