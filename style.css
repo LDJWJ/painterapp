@@ -246,6 +246,40 @@ input[type="range"]::-webkit-slider-thumb {
     100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
 }
 
+/* Text Input Overlay */
+.text-input-overlay {
+    position: absolute;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background-color: #16213e;
+    border: 1px solid #e94560;
+    border-radius: 6px;
+    padding: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+.text-input-overlay input[type="text"] {
+    background-color: #0f3460;
+    border: 1px solid #1a4a7a;
+    border-radius: 4px;
+    color: #eee;
+    font-size: 14px;
+    padding: 6px 10px;
+    min-width: 200px;
+    outline: none;
+}
+.text-input-overlay input[type="text"]:focus { border-color: #e94560; }
+.text-input-overlay .text-overlay-actions {
+    display: flex; gap: 4px; justify-content: flex-end;
+}
+.text-input-overlay button {
+    padding: 4px 12px; border: none; border-radius: 4px;
+    cursor: pointer; font-size: 12px;
+}
+.text-input-overlay .confirm-btn { background-color: #e94560; color: #fff; }
+.text-input-overlay .cancel-btn  { background-color: #0f3460; color: #eee; }
+
 /* Responsive */
 @media (max-width: 768px) {
     .toolbar {

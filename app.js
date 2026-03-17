@@ -45,6 +45,11 @@ class PainterApp {
         // Selection state
         this.selection = null;
 
+        // Text tool state
+        this.textOverlay = null;
+        this.pendingTextX = 0;
+        this.pendingTextY = 0;
+
         this.init();
     }
 
@@ -143,6 +148,7 @@ class PainterApp {
     }
 
     selectTool(tool) {
+        this.dismissTextOverlay();
         this.currentTool = tool;
         this.toolButtons.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tool === tool);
@@ -158,7 +164,9 @@ class PainterApp {
             rectangle: '사각형',
             arrow: '화살표',
             mosaic: '모자이크',
-            erase: '삭제'
+            erase: '삭제',
+            rightclick: '우클릭 아이콘',
+            text: '텍스트'
         };
         return names[tool] || tool;
     }
@@ -182,8 +190,20 @@ class PainterApp {
     handleMouseDown(e) {
         if (!this.hasImage) return;
 
-        this.isDrawing = true;
         const coords = this.getCanvasCoords(e);
+
+        if (this.currentTool === 'rightclick') {
+            this.drawRightClickIcon(coords.x, coords.y);
+            this.saveState();
+            this.updateStatus('우클릭 아이콘 추가됨');
+            return;
+        }
+        if (this.currentTool === 'text') {
+            this.showTextOverlay(coords.x, coords.y, e.clientX, e.clientY);
+            return;
+        }
+
+        this.isDrawing = true;
         this.startX = coords.x;
         this.startY = coords.y;
 
@@ -447,6 +467,8 @@ class PainterApp {
     }
 
     handleKeyboard(e) {
+        if (this.textOverlay) return;
+
         // Ctrl+Z: Undo
         if (e.ctrlKey && e.key === 'z') {
             e.preventDefault();
@@ -482,6 +504,161 @@ class PainterApp {
             e.preventDefault();
             this.deleteSelection();
         }
+    }
+
+    drawRightClickIcon(cx, cy) {
+        const ctx = this.ctx;
+        const W = 22, H = 36;
+        const x = cx - W / 2;
+        const y = cy - H / 2;
+        const r = 8; // corner radius
+        const btnLineY = y + H * 0.38;
+        const midX = x + W / 2;
+
+        ctx.save();
+
+        // Mouse outline (rounded rect)
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + W - r, y);
+        ctx.arcTo(x + W, y, x + W, y + r, r);
+        ctx.lineTo(x + W, y + H - r);
+        ctx.arcTo(x + W, y + H, x + W - r, y + H, r);
+        ctx.lineTo(x + r, y + H);
+        ctx.arcTo(x, y + H, x, y + H - r, r);
+        ctx.lineTo(x, y + r);
+        ctx.arcTo(x, y, x + r, y, r);
+        ctx.closePath();
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.strokeStyle = '#333333';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Right button fill (highlight)
+        ctx.beginPath();
+        ctx.moveTo(midX, y + 1);
+        ctx.lineTo(x + W - r, y + 1);
+        ctx.arcTo(x + W - 1, y + 1, x + W - 1, y + r, r - 1);
+        ctx.lineTo(x + W - 1, btnLineY);
+        ctx.lineTo(midX, btnLineY);
+        ctx.closePath();
+        ctx.fillStyle = this.currentColor;
+        ctx.fill();
+
+        // Horizontal divider line (button/body)
+        ctx.beginPath();
+        ctx.moveTo(x + 1, btnLineY);
+        ctx.lineTo(x + W - 1, btnLineY);
+        ctx.strokeStyle = '#333333';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Vertical center line (left/right button)
+        ctx.beginPath();
+        ctx.moveTo(midX, y + 1);
+        ctx.lineTo(midX, btnLineY - 1);
+        ctx.stroke();
+
+        // Scroll wheel
+        const wheelX = midX - 2;
+        const wheelY = btnLineY + (H - H * 0.38) * 0.25;
+        const wheelH = (H - H * 0.38) * 0.35;
+        ctx.beginPath();
+        ctx.roundRect(wheelX, wheelY, 4, wheelH, 2);
+        ctx.fillStyle = '#888888';
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    showTextOverlay(canvasX, canvasY, clientX, clientY) {
+        this.dismissTextOverlay();
+        this.pendingTextX = canvasX;
+        this.pendingTextY = canvasY;
+
+        const wrapper = document.querySelector('.canvas-wrapper');
+        const wrapperRect = wrapper.getBoundingClientRect();
+
+        const overlay = document.createElement('div');
+        overlay.className = 'text-input-overlay';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = '텍스트 입력...';
+
+        const actions = document.createElement('div');
+        actions.className = 'text-overlay-actions';
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'confirm-btn';
+        confirmBtn.textContent = '확인';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'cancel-btn';
+        cancelBtn.textContent = '취소';
+
+        actions.appendChild(cancelBtn);
+        actions.appendChild(confirmBtn);
+        overlay.appendChild(input);
+        overlay.appendChild(actions);
+        wrapper.appendChild(overlay);
+        this.textOverlay = overlay;
+
+        // Position overlay relative to canvas-wrapper
+        let left = clientX - wrapperRect.left + 8;
+        let top = clientY - wrapperRect.top + 8;
+        overlay.style.left = left + 'px';
+        overlay.style.top = top + 'px';
+
+        // After render, correct if out of bounds
+        requestAnimationFrame(() => {
+            const oRect = overlay.getBoundingClientRect();
+            if (oRect.right > window.innerWidth - 8) {
+                left = clientX - wrapperRect.left - oRect.width - 8;
+                overlay.style.left = left + 'px';
+            }
+            if (oRect.bottom > window.innerHeight - 8) {
+                top = clientY - wrapperRect.top - oRect.height - 8;
+                overlay.style.top = top + 'px';
+            }
+        });
+
+        const confirm = () => {
+            const text = input.value.trim();
+            if (text) {
+                this.drawText(text, this.pendingTextX, this.pendingTextY);
+                this.saveState();
+                this.updateStatus('텍스트 추가됨');
+            }
+            this.dismissTextOverlay();
+        };
+
+        confirmBtn.addEventListener('click', confirm);
+        cancelBtn.addEventListener('click', () => this.dismissTextOverlay());
+        input.addEventListener('keydown', (e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter') confirm();
+            if (e.key === 'Escape') this.dismissTextOverlay();
+        });
+
+        input.focus();
+    }
+
+    dismissTextOverlay() {
+        if (this.textOverlay) {
+            this.textOverlay.remove();
+            this.textOverlay = null;
+        }
+    }
+
+    drawText(text, x, y) {
+        const ctx = this.ctx;
+        const fontSize = 8 + this.lineWidth * 5;
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        ctx.fillStyle = this.currentColor;
+        ctx.textBaseline = 'top';
+        ctx.fillText(text, x, y);
     }
 
     deleteSelection() {
