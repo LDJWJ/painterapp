@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painter App - 이미지 편집기</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Pretendard -->
+    <link rel="stylesheet" as="style" crossorigin
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+    <!-- Noto Sans KR -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="app-container">
@@ -91,6 +98,30 @@
                     <span class="label">다운로드</span>
                 </button>
             </div>
+        </div>
+
+        <!-- 텍스트 도구 전용 서식 바 (텍스트 도구 선택 시에만 표시) -->
+        <div class="text-toolbar" id="textToolbar">
+            <span class="tb-label">글꼴</span>
+            <select id="fontFamily" class="font-select">
+                <option value="Pretendard">Pretendard</option>
+                <option value="Noto Sans KR">Noto Sans KR</option>
+                <option value="맑은 고딕">맑은 고딕</option>
+                <option value="굴림">굴림</option>
+                <option value="Arial">Arial</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Courier New">Courier New</option>
+            </select>
+            <input type="number" id="textFontSize" class="font-size-input" value="24" min="8" max="200" step="1">
+            <span class="tb-label">px</span>
+            <div class="separator"></div>
+            <button class="fmt-btn" id="boldBtn" title="굵게"><b>B</b></button>
+            <button class="fmt-btn" id="italicBtn" title="기울기"><i>I</i></button>
+            <button class="fmt-btn" id="underlineBtn" title="밑줄"><u>U</u></button>
+            <div class="separator"></div>
+            <button class="fmt-btn" id="alignLeftBtn" title="왼쪽 정렬">왼</button>
+            <button class="fmt-btn" id="alignCenterBtn" title="가운데 정렬">중</button>
+            <button class="fmt-btn" id="alignRightBtn" title="오른쪽 정렬">오</button>
         </div>
 
         <div class="canvas-container">
