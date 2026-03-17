@@ -181,6 +181,15 @@ input[type="range"]::-webkit-slider-thumb {
     display: none;
 }
 
+#textCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: crosshair;
+    pointer-events: none;
+    display: none;
+}
+
 .placeholder {
     text-align: center;
     color: #666;
