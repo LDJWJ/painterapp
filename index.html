@@ -67,11 +67,16 @@
             </div>
 
             <div class="option-group">
-                <label class="option-label">
-                    두께
-                    <input type="range" id="lineWidth" min="1" max="50" value="3">
-                    <span id="lineWidthValue">3px</span>
-                </label>
+                <span class="option-label">두께</span>
+                <div class="thickness-presets">
+                    <button class="thickness-btn" data-width="1" title="1px"><span class="thickness-dot" style="width:2px;height:2px;"></span></button>
+                    <button class="thickness-btn" data-width="3" title="3px"><span class="thickness-dot" style="width:4px;height:4px;"></span></button>
+                    <button class="thickness-btn active" data-width="5" title="5px"><span class="thickness-dot" style="width:6px;height:6px;"></span></button>
+                    <button class="thickness-btn" data-width="8" title="8px"><span class="thickness-dot" style="width:9px;height:9px;"></span></button>
+                    <button class="thickness-btn" data-width="12" title="12px"><span class="thickness-dot" style="width:12px;height:12px;"></span></button>
+                    <button class="thickness-btn" data-width="17" title="17px"><span class="thickness-dot" style="width:16px;height:16px;"></span></button>
+                </div>
+                <span id="lineWidthValue">5px</span>
             </div>
 
             <div class="option-group">

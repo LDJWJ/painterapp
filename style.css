@@ -175,6 +175,38 @@ input[type="range"]::-webkit-slider-thumb {
     display: block;
 }
 
+.thickness-presets {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.thickness-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    background-color: #0f3460;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.thickness-btn:hover { background-color: #1a4a7a; }
+
+.thickness-btn.active {
+    border-color: #e94560;
+    background-color: #1a4a7a;
+}
+
+.thickness-dot {
+    display: block;
+    background-color: #eee;
+    border-radius: 50%;
+}
+
 .output-select {
     background-color: #0f3460;
     color: #eee;

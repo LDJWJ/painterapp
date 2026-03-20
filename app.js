@@ -15,8 +15,8 @@ class PainterApp {
         this.toolButtons = document.querySelectorAll('.tool-btn');
         this.colorPicker = document.getElementById('colorPicker');
         this.presetColors = document.querySelectorAll('.color-preset');
-        this.lineWidthInput = document.getElementById('lineWidth');
         this.lineWidthValue = document.getElementById('lineWidthValue');
+        this.thicknessButtons = document.querySelectorAll('.thickness-btn');
         this.blockSizeInput = document.getElementById('blockSize');
         this.blockSizeValue = document.getElementById('blockSizeValue');
 
@@ -43,7 +43,7 @@ class PainterApp {
         // Drawing state
         this.currentTool = 'select';
         this.currentColor = '#ff0000';
-        this.lineWidth = 3;
+        this.lineWidth = 5;
         this.blockSize = 15;
         this.isDrawing = false;
         this.startX = 0;
@@ -123,9 +123,13 @@ class PainterApp {
             });
         });
 
-        this.lineWidthInput.addEventListener('input', (e) => {
-            this.lineWidth = parseInt(e.target.value);
-            this.lineWidthValue.textContent = `${this.lineWidth}px`;
+        this.thicknessButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.lineWidth = parseInt(btn.dataset.width);
+                this.lineWidthValue.textContent = `${this.lineWidth}px`;
+                this.thicknessButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
         });
 
         this.blockSizeInput.addEventListener('input', (e) => {
