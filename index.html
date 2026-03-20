@@ -103,6 +103,10 @@
             <div class="separator"></div>
 
             <div class="action-group">
+                <button class="action-btn" id="resizeBtn" title="이미지 리사이즈">
+                    <span class="icon">⤡</span>
+                    <span class="label">리사이즈</span>
+                </button>
                 <button class="action-btn" id="undoBtn" title="실행 취소 (Ctrl+Z / Cmd+Z)">
                     <span class="icon">↶</span>
                     <span class="label">취소</span>
@@ -174,6 +178,41 @@
         <div class="status-bar">
             <span id="statusText">이미지를 붙여넣어 시작하세요</span>
             <span id="imageSize"></span>
+        </div>
+    </div>
+
+    <!-- 리사이즈 모달 -->
+    <div class="modal-backdrop" id="resizeModal">
+        <div class="modal">
+            <div class="modal-title">이미지 리사이즈</div>
+            <div class="modal-body">
+                <div class="resize-presets">
+                    <button class="preset-btn" data-scale="1">100%</button>
+                    <button class="preset-btn" data-scale="0.75">75%</button>
+                    <button class="preset-btn" data-scale="0.5">50%</button>
+                    <button class="preset-btn" data-scale="0.25">25%</button>
+                </div>
+                <div class="resize-inputs">
+                    <div class="resize-row">
+                        <label>가로</label>
+                        <input type="number" id="resizeWidth" min="1" max="10000">
+                        <span>px</span>
+                    </div>
+                    <div class="resize-lock">
+                        <button class="lock-btn active" id="aspectLockBtn" title="비율 고정">🔒 비율 고정</button>
+                    </div>
+                    <div class="resize-row">
+                        <label>세로</label>
+                        <input type="number" id="resizeHeight" min="1" max="10000">
+                        <span>px</span>
+                    </div>
+                </div>
+                <div class="resize-info" id="resizeInfo"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-cancel" id="resizeCancelBtn">취소</button>
+                <button class="modal-confirm" id="resizeConfirmBtn">적용</button>
+            </div>
         </div>
     </div>
 

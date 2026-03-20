@@ -368,6 +368,106 @@ input[type="range"]::-webkit-slider-thumb {
 .text-input-overlay .confirm-btn { background-color: #e94560; color: #fff; }
 .text-input-overlay .cancel-btn  { background-color: #0f3460; color: #eee; }
 
+/* Resize Modal */
+.modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+}
+.modal-backdrop.open { display: flex; }
+
+.modal {
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 10px;
+    padding: 24px;
+    min-width: 300px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.modal-title {
+    font-size: 15px;
+    font-weight: bold;
+    color: #eee;
+    margin-bottom: 20px;
+}
+.resize-presets {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.preset-btn {
+    flex: 1;
+    padding: 7px 0;
+    background: #0f3460;
+    color: #eee;
+    border: 1px solid #1a4a7a;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+.preset-btn:hover { background: #1a4a7a; }
+
+.resize-inputs { display: flex; flex-direction: column; gap: 8px; }
+.resize-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.resize-row label { font-size: 12px; color: #aaa; width: 28px; }
+.resize-row input {
+    width: 100px;
+    background: #0f3460;
+    color: #eee;
+    border: 1px solid #1a4a7a;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 14px;
+    text-align: right;
+}
+.resize-row input:focus { outline: none; border-color: #e94560; }
+.resize-row span { font-size: 12px; color: #666; }
+
+.resize-lock { display: flex; justify-content: flex-start; padding-left: 38px; }
+.lock-btn {
+    background: none;
+    border: 1px solid #1a4a7a;
+    border-radius: 4px;
+    color: #888;
+    font-size: 11px;
+    padding: 3px 10px;
+    cursor: pointer;
+}
+.lock-btn.active { border-color: #e94560; color: #e94560; }
+
+.resize-info {
+    margin-top: 14px;
+    font-size: 11px;
+    color: #888;
+    min-height: 16px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+}
+.modal-cancel, .modal-confirm {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+.modal-cancel { background: #0f3460; color: #eee; }
+.modal-cancel:hover { background: #1a4a7a; }
+.modal-confirm { background: #e94560; color: #fff; }
+.modal-confirm:hover { background: #c73652; }
+
 /* Responsive */
 @media (max-width: 768px) {
     .toolbar {

@@ -71,6 +71,14 @@ class PainterApp {
         this.canvasWrapper = document.querySelector('.canvas-wrapper');
         this.zoomLevelLabel = document.getElementById('zoomLevelLabel');
 
+        // Resize modal
+        this.resizeModal = document.getElementById('resizeModal');
+        this.resizeWidthInput = document.getElementById('resizeWidth');
+        this.resizeHeightInput = document.getElementById('resizeHeight');
+        this.aspectLockBtn = document.getElementById('aspectLockBtn');
+        this.resizeInfo = document.getElementById('resizeInfo');
+        this.aspectLocked = true;
+
         // Output preset: "format:scale:quality"
         this.outputPreset = 'jpeg:1:0.75';
         this.outputSizeLabel = document.getElementById('outputSizeLabel');
@@ -135,6 +143,43 @@ class PainterApp {
         this.undoBtn.addEventListener('click', () => this.undo());
         this.copyBtn.addEventListener('click', () => this.copyToClipboard());
         this.downloadBtn.addEventListener('click', () => this.download());
+
+        // Resize modal
+        document.getElementById('resizeBtn').addEventListener('click', () => this.openResizeModal());
+        document.getElementById('resizeCancelBtn').addEventListener('click', () => this.closeResizeModal());
+        document.getElementById('resizeConfirmBtn').addEventListener('click', () => this.applyResize());
+        this.resizeModal.addEventListener('click', (e) => { if (e.target === this.resizeModal) this.closeResizeModal(); });
+
+        this.aspectLockBtn.addEventListener('click', () => {
+            this.aspectLocked = !this.aspectLocked;
+            this.aspectLockBtn.classList.toggle('active', this.aspectLocked);
+            this.aspectLockBtn.textContent = this.aspectLocked ? '🔒 비율 고정' : '🔓 비율 해제';
+        });
+
+        this.resizeWidthInput.addEventListener('input', () => {
+            if (this.aspectLocked && this.hasImage) {
+                const ratio = this.canvas.height / this.canvas.width;
+                this.resizeHeightInput.value = Math.round(this.resizeWidthInput.value * ratio);
+            }
+            this.updateResizeInfo();
+        });
+
+        this.resizeHeightInput.addEventListener('input', () => {
+            if (this.aspectLocked && this.hasImage) {
+                const ratio = this.canvas.width / this.canvas.height;
+                this.resizeWidthInput.value = Math.round(this.resizeHeightInput.value * ratio);
+            }
+            this.updateResizeInfo();
+        });
+
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const scale = parseFloat(btn.dataset.scale);
+                this.resizeWidthInput.value = Math.round(this.canvas.width * scale);
+                this.resizeHeightInput.value = Math.round(this.canvas.height * scale);
+                this.updateResizeInfo();
+            });
+        });
 
         // Output preset
         document.getElementById('outputPreset').addEventListener('change', (e) => {
@@ -658,6 +703,64 @@ class PainterApp {
     }
 
     // ---------- Keyboard ----------
+
+    // ---------- Resize ----------
+
+    openResizeModal() {
+        if (!this.hasImage) { this.showToast('이미지를 먼저 붙여넣으세요'); return; }
+        this.resizeWidthInput.value = this.canvas.width;
+        this.resizeHeightInput.value = this.canvas.height;
+        this.updateResizeInfo();
+        this.resizeModal.classList.add('open');
+    }
+
+    closeResizeModal() {
+        this.resizeModal.classList.remove('open');
+    }
+
+    updateResizeInfo() {
+        const w = parseInt(this.resizeWidthInput.value) || 0;
+        const h = parseInt(this.resizeHeightInput.value) || 0;
+        if (!w || !h) { this.resizeInfo.textContent = ''; return; }
+        const origW = this.canvas.width, origH = this.canvas.height;
+        const pct = Math.round((w / origW) * 100);
+        this.resizeInfo.textContent = `${origW} x ${origH} → ${w} x ${h} (${pct}%)`;
+    }
+
+    applyResize() {
+        const newW = parseInt(this.resizeWidthInput.value);
+        const newH = parseInt(this.resizeHeightInput.value);
+        if (!newW || !newH || newW < 1 || newH < 1) { this.showToast('올바른 크기를 입력하세요'); return; }
+
+        const scaleX = newW / this.canvas.width;
+        const scaleY = newH / this.canvas.height;
+
+        // 현재 합성 이미지를 새 크기로 그리기
+        const composite = this.getCompositeCanvas();
+        this.canvas.width = newW;
+        this.canvas.height = newH;
+        this.overlayCanvas.width = newW;
+        this.overlayCanvas.height = newH;
+        this.textCanvas.width = newW;
+        this.textCanvas.height = newH;
+        this.ctx.drawImage(composite, 0, 0, newW, newH);
+
+        // 텍스트 오브젝트 좌표/크기도 비율에 맞게 조정
+        this.textObjects = this.textObjects.map(obj => ({
+            ...obj,
+            x: obj.x * scaleX,
+            y: obj.y * scaleY,
+            fontSize: Math.round(obj.fontSize * Math.min(scaleX, scaleY))
+        }));
+
+        this.saveState();
+        this.imageSize.textContent = `${newW} x ${newH}`;
+        this.updateOutputSizeLabel();
+        this.renderTextLayer();
+        this.closeResizeModal();
+        this.showToast(`${newW} x ${newH} 으로 리사이즈됨`);
+        this.updateStatus(`이미지 리사이즈: ${newW} x ${newH}`);
+    }
 
     // ---------- Zoom ----------
 
