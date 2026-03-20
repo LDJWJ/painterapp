@@ -238,7 +238,8 @@ class PainterApp {
                 this.textCanvas.style.display = 'block';
                 this.saveState();
                 this.updateStatus('이미지 로드됨');
-                this.imageSize.textContent = `${img.width} x ${img.height}`;
+                const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+                this.imageSize.textContent = `${img.width} x ${img.height} · 원본 ${sizeMB}MB`;
                 this.updateOutputSizeLabel();
             };
             img.src = e.target.result;
