@@ -163,6 +163,16 @@ input[type="range"]::-webkit-slider-thumb {
     position: relative;
     display: inline-block;
     line-height: 0;
+    transform-origin: center center;
+    transition: transform 0.15s ease;
+}
+
+.zoom-label {
+    font-size: 13px;
+    font-weight: bold;
+    min-width: 36px;
+    text-align: center;
+    display: block;
 }
 
 #mainCanvas {

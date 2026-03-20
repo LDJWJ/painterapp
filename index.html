@@ -85,7 +85,7 @@
             <div class="separator"></div>
 
             <div class="action-group">
-                <button class="action-btn" id="undoBtn" title="실행 취소 (Ctrl+Z)">
+                <button class="action-btn" id="undoBtn" title="실행 취소 (Ctrl+Z / Cmd+Z)">
                     <span class="icon">↶</span>
                     <span class="label">취소</span>
                 </button>
@@ -96,6 +96,23 @@
                 <button class="action-btn" id="downloadBtn" title="이미지 다운로드">
                     <span class="icon">⬇</span>
                     <span class="label">다운로드</span>
+                </button>
+            </div>
+
+            <div class="separator"></div>
+
+            <div class="action-group zoom-group">
+                <button class="action-btn" id="zoomOutBtn" title="축소 (-)">
+                    <span class="icon">－</span>
+                    <span class="label">축소</span>
+                </button>
+                <button class="action-btn" id="zoomResetBtn" title="원래 크기">
+                    <span class="zoom-label" id="zoomLevelLabel">100%</span>
+                    <span class="label">크기</span>
+                </button>
+                <button class="action-btn" id="zoomInBtn" title="확대 (+)">
+                    <span class="icon">＋</span>
+                    <span class="label">확대</span>
                 </button>
             </div>
         </div>
@@ -132,7 +149,7 @@
             </div>
             <div class="placeholder" id="placeholder">
                 <p>📷 이미지를 붙여넣으세요</p>
-                <p class="shortcut">Ctrl + V</p>
+                <p class="shortcut">Ctrl + V &nbsp;/&nbsp; ⌘ + V</p>
             </div>
         </div>
 

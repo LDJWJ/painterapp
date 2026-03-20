@@ -66,6 +66,11 @@ class PainterApp {
         this.textUnderline = false;
         this.textAlign = 'left';
 
+        // Zoom
+        this.zoomLevel = 1.0;
+        this.canvasWrapper = document.querySelector('.canvas-wrapper');
+        this.zoomLevelLabel = document.getElementById('zoomLevelLabel');
+
         // Text object system
         this.textOverlay = null;
         this.textObjects = [];
@@ -126,6 +131,20 @@ class PainterApp {
         this.undoBtn.addEventListener('click', () => this.undo());
         this.copyBtn.addEventListener('click', () => this.copyToClipboard());
         this.downloadBtn.addEventListener('click', () => this.download());
+
+        // Zoom buttons
+        document.getElementById('zoomInBtn').addEventListener('click', () => this.zoomIn());
+        document.getElementById('zoomOutBtn').addEventListener('click', () => this.zoomOut());
+        document.getElementById('zoomResetBtn').addEventListener('click', () => this.zoomReset());
+
+        // Wheel zoom (Ctrl/Cmd + scroll)
+        document.querySelector('.canvas-container').addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                if (e.deltaY < 0) this.zoomIn();
+                else this.zoomOut();
+            }
+        }, { passive: false });
 
         document.addEventListener('keydown', (e) => this.handleKeyboard(e));
 
@@ -581,6 +600,28 @@ class PainterApp {
 
     // ---------- Keyboard ----------
 
+    // ---------- Zoom ----------
+
+    applyZoom() {
+        this.canvasWrapper.style.transform = `scale(${this.zoomLevel})`;
+        this.zoomLevelLabel.textContent = `${Math.round(this.zoomLevel * 100)}%`;
+    }
+
+    zoomIn() {
+        this.zoomLevel = Math.min(5.0, parseFloat((this.zoomLevel + 0.1).toFixed(1)));
+        this.applyZoom();
+    }
+
+    zoomOut() {
+        this.zoomLevel = Math.max(0.1, parseFloat((this.zoomLevel - 0.1).toFixed(1)));
+        this.applyZoom();
+    }
+
+    zoomReset() {
+        this.zoomLevel = 1.0;
+        this.applyZoom();
+    }
+
     handleKeyboard(e) {
         if (this.textOverlay) return;
 
@@ -595,13 +636,17 @@ class PainterApp {
             return;
         }
 
-        if (e.ctrlKey && e.key === 'z') { e.preventDefault(); this.undo(); }
-        if (e.ctrlKey && e.key === 'c' && this.hasImage) { e.preventDefault(); this.copyToClipboard(); }
-        if (e.ctrlKey && e.key === 's') { e.preventDefault(); this.download(); }
-        if (e.ctrlKey && e.key === 'a' && this.hasImage) {
+        const isMod = e.ctrlKey || e.metaKey;
+        if (isMod && e.key === 'z') { e.preventDefault(); this.undo(); }
+        if (isMod && e.key === 'c' && this.hasImage) { e.preventDefault(); this.copyToClipboard(); }
+        if (isMod && e.key === 's') { e.preventDefault(); this.download(); }
+        if (isMod && e.key === '=' ) { e.preventDefault(); this.zoomIn(); }
+        if (isMod && e.key === '-' ) { e.preventDefault(); this.zoomOut(); }
+        if (isMod && e.key === '0' ) { e.preventDefault(); this.zoomReset(); }
+        if (isMod && e.key === 'a' && this.hasImage) {
             e.preventDefault();
             this.selection = { x: 0, y: 0, width: this.canvas.width, height: this.canvas.height };
-            this.updateStatus('전체 선택됨 - Ctrl+C로 복사');
+            this.updateStatus('전체 선택됨 - Ctrl+C / Cmd+C로 복사');
         }
         if (e.key === 'Delete' && this.selection && this.hasImage) {
             e.preventDefault();
