@@ -84,12 +84,30 @@
 
             <div class="separator"></div>
 
+            <div class="option-group">
+                <label class="option-label">
+                    출력
+                    <select id="outputPreset" class="output-select" title="복사/다운로드 시 적용되는 출력 크기">
+                        <option value="png:1">PNG 원본</option>
+                        <option value="jpeg:1:0.92">JPEG 고화질</option>
+                        <option value="jpeg:1:0.75" selected>JPEG 표준 ★</option>
+                        <option value="jpeg:1:0.5">JPEG 저용량</option>
+                        <option value="jpeg:0.75:0.8">75% 축소</option>
+                        <option value="jpeg:0.5:0.8">50% 축소</option>
+                        <option value="jpeg:0.25:0.8">25% 축소</option>
+                    </select>
+                </label>
+                <span id="outputSizeLabel" class="output-size-label">-</span>
+            </div>
+
+            <div class="separator"></div>
+
             <div class="action-group">
                 <button class="action-btn" id="undoBtn" title="실행 취소 (Ctrl+Z / Cmd+Z)">
                     <span class="icon">↶</span>
                     <span class="label">취소</span>
                 </button>
-                <button class="action-btn" id="copyBtn" title="클립보드에 복사 (Ctrl+A → Ctrl+C)">
+                <button class="action-btn" id="copyBtn" title="클립보드에 복사 (Ctrl+C / Cmd+C)">
                     <span class="icon">📋</span>
                     <span class="label">복사</span>
                 </button>

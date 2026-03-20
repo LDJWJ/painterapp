@@ -175,6 +175,25 @@ input[type="range"]::-webkit-slider-thumb {
     display: block;
 }
 
+.output-select {
+    background-color: #0f3460;
+    color: #eee;
+    border: 1px solid #1a4a7a;
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 12px;
+    cursor: pointer;
+    max-width: 120px;
+}
+.output-select:focus { outline: none; border-color: #e94560; }
+
+.output-size-label {
+    font-size: 11px;
+    color: #e94560;
+    min-width: 44px;
+    text-align: right;
+}
+
 #mainCanvas {
     background-color: #fff;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);

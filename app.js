@@ -71,6 +71,10 @@ class PainterApp {
         this.canvasWrapper = document.querySelector('.canvas-wrapper');
         this.zoomLevelLabel = document.getElementById('zoomLevelLabel');
 
+        // Output preset: "format:scale:quality"
+        this.outputPreset = 'jpeg:1:0.75';
+        this.outputSizeLabel = document.getElementById('outputSizeLabel');
+
         // Text object system
         this.textOverlay = null;
         this.textObjects = [];
@@ -131,6 +135,12 @@ class PainterApp {
         this.undoBtn.addEventListener('click', () => this.undo());
         this.copyBtn.addEventListener('click', () => this.copyToClipboard());
         this.downloadBtn.addEventListener('click', () => this.download());
+
+        // Output preset
+        document.getElementById('outputPreset').addEventListener('change', (e) => {
+            this.outputPreset = e.target.value;
+            this.updateOutputSizeLabel();
+        });
 
         // Zoom buttons
         document.getElementById('zoomInBtn').addEventListener('click', () => this.zoomIn());
@@ -229,6 +239,7 @@ class PainterApp {
                 this.saveState();
                 this.updateStatus('이미지 로드됨');
                 this.imageSize.textContent = `${img.width} x ${img.height}`;
+                this.updateOutputSizeLabel();
             };
             img.src = e.target.result;
         };
@@ -561,26 +572,70 @@ class PainterApp {
 
     // ---------- Output ----------
 
-    getCompositeCanvas() {
+    getCompositeCanvas(scale = 1) {
+        const w = Math.round(this.canvas.width * scale);
+        const h = Math.round(this.canvas.height * scale);
         const temp = document.createElement('canvas');
-        temp.width = this.canvas.width;
-        temp.height = this.canvas.height;
+        temp.width = w;
+        temp.height = h;
         const ctx = temp.getContext('2d');
-        ctx.drawImage(this.canvas, 0, 0);
+        ctx.drawImage(this.canvas, 0, 0, w, h);
         for (const obj of this.textObjects) {
-            this._renderTextToCtx(ctx, obj, false);
+            const scaled = Object.assign({}, obj, { x: obj.x * scale, y: obj.y * scale, fontSize: obj.fontSize * scale });
+            this._renderTextToCtx(ctx, scaled, false);
         }
         return temp;
+    }
+
+    parseOutputPreset() {
+        const [fmt, scaleStr, qualityStr] = this.outputPreset.split(':');
+        return {
+            format: fmt,
+            scale: parseFloat(scaleStr),
+            quality: qualityStr ? parseFloat(qualityStr) : 1
+        };
+    }
+
+    updateOutputSizeLabel() {
+        if (!this.hasImage) { this.outputSizeLabel.textContent = '-'; return; }
+        const { format, scale, quality } = this.parseOutputPreset();
+        const canvas = this.getCompositeCanvas(scale);
+        const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+        const dataUrl = canvas.toDataURL(mimeType, quality);
+        const bytes = Math.round((dataUrl.length - dataUrl.indexOf(',') - 1) * 0.75);
+        const mb = (bytes / 1024 / 1024).toFixed(1);
+        this.outputSizeLabel.textContent = `≈${mb}MB`;
     }
 
     async copyToClipboard() {
         if (!this.hasImage) { this.showToast('복사할 이미지가 없습니다'); return; }
         try {
+            const { format, scale, quality } = this.parseOutputPreset();
+            const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
             const blob = await new Promise(resolve =>
-                this.getCompositeCanvas().toBlob(resolve, 'image/png')
+                this.getCompositeCanvas(scale).toBlob(resolve, mimeType, quality)
             );
-            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-            this.showToast('클립보드에 복사됨');
+            // 클립보드는 image/png 타입으로 등록해야 Notion 등에서 붙여넣기 가능
+            const clipMime = 'image/png';
+            let finalBlob = blob;
+            if (mimeType !== 'image/png') {
+                // JPEG blob을 PNG로 재변환하여 클립보드에 복사
+                finalBlob = await new Promise(resolve => {
+                    const url = URL.createObjectURL(blob);
+                    const img = new Image();
+                    img.onload = () => {
+                        const c = document.createElement('canvas');
+                        c.width = img.width; c.height = img.height;
+                        c.getContext('2d').drawImage(img, 0, 0);
+                        URL.revokeObjectURL(url);
+                        c.toBlob(resolve, 'image/png');
+                    };
+                    img.src = url;
+                });
+            }
+            await navigator.clipboard.write([new ClipboardItem({ [clipMime]: finalBlob })]);
+            const mb = (finalBlob.size / 1024 / 1024).toFixed(1);
+            this.showToast(`클립보드에 복사됨 (${mb}MB)`);
             this.updateStatus('이미지가 클립보드에 복사됨');
         } catch (err) {
             console.error('Copy failed:', err);
@@ -590,9 +645,12 @@ class PainterApp {
 
     download() {
         if (!this.hasImage) { this.showToast('다운로드할 이미지가 없습니다'); return; }
+        const { format, scale, quality } = this.parseOutputPreset();
+        const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+        const ext = format === 'png' ? 'png' : 'jpg';
         const link = document.createElement('a');
-        link.download = `edited-image-${Date.now()}.png`;
-        link.href = this.getCompositeCanvas().toDataURL('image/png');
+        link.download = `edited-image-${Date.now()}.${ext}`;
+        link.href = this.getCompositeCanvas(scale).toDataURL(mimeType, quality);
         link.click();
         this.showToast('이미지 다운로드됨');
         this.updateStatus('이미지 다운로드됨');
