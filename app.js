@@ -19,6 +19,7 @@ class PainterApp {
         this.thicknessButtons = document.querySelectorAll('.thickness-btn');
         this.blockSizeInput = document.getElementById('blockSize');
         this.blockSizeValue = document.getElementById('blockSizeValue');
+        this.arrowStyleSelect = document.getElementById('arrowStyle');
 
         // Action buttons
         this.undoBtn = document.getElementById('undoBtn');
@@ -45,6 +46,7 @@ class PainterApp {
         this.currentColor = '#ff0000';
         this.lineWidth = 5;
         this.blockSize = 15;
+        this.arrowStyle = 'classic';
         this.isDrawing = false;
         this.startX = 0;
         this.startY = 0;
@@ -135,6 +137,10 @@ class PainterApp {
         this.blockSizeInput.addEventListener('input', (e) => {
             this.blockSize = parseInt(e.target.value);
             this.blockSizeValue.textContent = `${this.blockSize}px`;
+        });
+
+        this.arrowStyleSelect.addEventListener('change', (e) => {
+            this.arrowStyle = e.target.value;
         });
 
         // Canvas mouse events
@@ -511,9 +517,22 @@ class PainterApp {
         this.ctx.strokeRect(x, y, width, height);
     }
 
+    // angle: 화살촉 벌어진 각(반각, rad) / notch: 뒷면을 촉 쪽으로 파내는 비율(0=평평) / filled: 채움 여부
+    getArrowHeadStyle(style) {
+        const presets = {
+            classic: { angle: 28 * Math.PI / 180, notch: 0.4, filled: true, lenBase: 14, lenFactor: 1.8 },
+            sharp: { angle: 16 * Math.PI / 180, notch: 0, filled: true, lenBase: 16, lenFactor: 2.2 },
+            open: { angle: 22 * Math.PI / 180, notch: 0, filled: false, lenBase: 14, lenFactor: 1.6 },
+            wide: { angle: 34 * Math.PI / 180, notch: 0, filled: true, lenBase: 13, lenFactor: 2.0 },
+            dart: { angle: 18 * Math.PI / 180, notch: 0.55, filled: true, lenBase: 20, lenFactor: 2.4 }
+        };
+        return presets[style] || presets.classic;
+    }
+
     drawArrow(fromX, fromY, toX, toY) {
-        const headLen = 15 + this.lineWidth * 2;
-        const angle = Math.atan2(toY - fromY, toX - fromX);
+        const { angle: a, notch, filled, lenBase, lenFactor } = this.getArrowHeadStyle(this.arrowStyle);
+        const headLen = lenBase + this.lineWidth * lenFactor;
+        const dir = Math.atan2(toY - fromY, toX - fromX);
 
         this.ctx.strokeStyle = this.currentColor;
         this.ctx.fillStyle = this.currentColor;
@@ -521,23 +540,37 @@ class PainterApp {
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
 
-        this.ctx.beginPath();
-        this.ctx.moveTo(fromX, fromY);
-        this.ctx.lineTo(toX, toY);
-        this.ctx.stroke();
+        // 화살촉 뒷면(또는 노치 꼭짓점)까지만 선을 그려 두꺼운 선이 촉 밖으로 삐져나오지 않게 함
+        const backAxial = headLen * Math.cos(a);
+        const shaftInset = filled ? backAxial * (1 - notch) : 0;
+        const shaftEndX = toX - shaftInset * Math.cos(dir);
+        const shaftEndY = toY - shaftInset * Math.sin(dir);
 
         this.ctx.beginPath();
-        this.ctx.moveTo(toX, toY);
-        this.ctx.lineTo(
-            toX - headLen * Math.cos(angle - Math.PI / 6),
-            toY - headLen * Math.sin(angle - Math.PI / 6)
-        );
-        this.ctx.lineTo(
-            toX - headLen * Math.cos(angle + Math.PI / 6),
-            toY - headLen * Math.sin(angle + Math.PI / 6)
-        );
-        this.ctx.closePath();
-        this.ctx.fill();
+        this.ctx.moveTo(fromX, fromY);
+        this.ctx.lineTo(shaftEndX, shaftEndY);
+        this.ctx.stroke();
+
+        const backLeftX = toX - headLen * Math.cos(dir - a);
+        const backLeftY = toY - headLen * Math.sin(dir - a);
+        const backRightX = toX - headLen * Math.cos(dir + a);
+        const backRightY = toY - headLen * Math.sin(dir + a);
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(backLeftX, backLeftY);
+        this.ctx.lineTo(toX, toY);
+        this.ctx.lineTo(backRightX, backRightY);
+
+        if (filled) {
+            const notchAxial = backAxial * (1 - notch);
+            const notchX = toX - notchAxial * Math.cos(dir);
+            const notchY = toY - notchAxial * Math.sin(dir);
+            this.ctx.lineTo(notchX, notchY);
+            this.ctx.closePath();
+            this.ctx.fill();
+        } else {
+            this.ctx.stroke();
+        }
     }
 
     applyMosaic(x, y, width, height) {
