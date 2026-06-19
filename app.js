@@ -46,7 +46,7 @@ class PainterApp {
         this.currentColor = '#ff0000';
         this.lineWidth = 5;
         this.blockSize = 15;
-        this.arrowStyle = 'classic';
+        this.arrowStyle = 'plain';
         this.isDrawing = false;
         this.startX = 0;
         this.startY = 0;
@@ -520,13 +520,13 @@ class PainterApp {
     // angle: 화살촉 벌어진 각(반각, rad) / notch: 뒷면을 촉 쪽으로 파내는 비율(0=평평) / filled: 채움 여부
     getArrowHeadStyle(style) {
         const presets = {
-            classic: { angle: 28 * Math.PI / 180, notch: 0.4, filled: true, lenBase: 14, lenFactor: 1.8 },
+            plain: { angle: 26 * Math.PI / 180, notch: 0, filled: true, lenBase: 14, lenFactor: 2.0 },
+            notch: { angle: 28 * Math.PI / 180, notch: 0.4, filled: true, lenBase: 14, lenFactor: 1.8 },
             sharp: { angle: 16 * Math.PI / 180, notch: 0, filled: true, lenBase: 16, lenFactor: 2.2 },
             open: { angle: 22 * Math.PI / 180, notch: 0, filled: false, lenBase: 14, lenFactor: 1.6 },
-            wide: { angle: 34 * Math.PI / 180, notch: 0, filled: true, lenBase: 13, lenFactor: 2.0 },
-            dart: { angle: 18 * Math.PI / 180, notch: 0.55, filled: true, lenBase: 20, lenFactor: 2.4 }
+            wide: { angle: 34 * Math.PI / 180, notch: 0, filled: true, lenBase: 13, lenFactor: 2.0 }
         };
-        return presets[style] || presets.classic;
+        return presets[style] || presets.plain;
     }
 
     drawArrow(fromX, fromY, toX, toY) {
