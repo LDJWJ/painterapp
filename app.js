@@ -44,6 +44,8 @@ class PainterApp {
         this.markerSizeValue = document.getElementById('markerSizeValue');
         this.markerDescriptionInput = document.getElementById('markerDescriptionInput');
         this.createMarkersBtn = document.getElementById('createMarkersBtn');
+        this.copyMarkerTemplateBtn = document.getElementById('copyMarkerTemplateBtn');
+        this.insertMarkerTemplateBtn = document.getElementById('insertMarkerTemplateBtn');
         this.markerList = document.getElementById('markerList');
 
         // Drawing state
@@ -276,6 +278,8 @@ class PainterApp {
             if (this.hasImage) this.saveState();
         });
         this.createMarkersBtn.addEventListener('click', () => this.createMarkersFromDescription());
+        this.copyMarkerTemplateBtn.addEventListener('click', () => this.copyMarkerNumberTemplate());
+        this.insertMarkerTemplateBtn.addEventListener('click', () => this.insertMarkerNumberTemplate());
         this.markerDescriptionInput.addEventListener('keydown', (e) => e.stopPropagation());
         this.markerDescriptionInput.addEventListener('paste', (e) => e.stopPropagation());
     }
@@ -1152,11 +1156,57 @@ class PainterApp {
         this.markerObjects.push(...newMarkers);
         this.selectedTextId = null;
         this.selectedMarkerId = newMarkers[0].id;
-        this.markerDescriptionInput.value = '';
+        this.markerDescriptionInput.value = this.getMarkerNumberTemplate(newMarkers);
         this.renderTextLayer();
         this.renderMarkerList();
         this.saveState();
         this.updateStatus('설명 번호 마커를 생성했습니다');
+    }
+
+    getMarkerNumberTemplate(markers = this.markerObjects) {
+        return markers
+            .slice()
+            .sort((a, b) => a.number - b.number)
+            .map(marker => `${marker.number}. `)
+            .join('\n');
+    }
+
+    async copyMarkerNumberTemplate() {
+        const template = this.getMarkerNumberTemplate();
+        if (!template) {
+            this.showToast('복사할 번호 마커가 없습니다');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(template);
+        } catch (err) {
+            const copyArea = document.createElement('textarea');
+            copyArea.value = template;
+            copyArea.style.position = 'fixed';
+            copyArea.style.left = '-9999px';
+            document.body.appendChild(copyArea);
+            copyArea.select();
+            document.execCommand('copy');
+            copyArea.remove();
+        }
+        this.showToast('번호 목록이 복사되었습니다');
+        this.updateStatus('번호 목록을 클립보드에 복사했습니다');
+    }
+
+    insertMarkerNumberTemplate() {
+        const template = this.getMarkerNumberTemplate();
+        if (!template) {
+            this.showToast('삽입할 번호 마커가 없습니다');
+            return;
+        }
+
+        const current = this.markerDescriptionInput.value.trimEnd();
+        this.markerDescriptionInput.value = current ? `${current}\n${template}` : template;
+        this.markerDescriptionInput.focus();
+        this.markerDescriptionInput.selectionStart = this.markerDescriptionInput.value.length;
+        this.markerDescriptionInput.selectionEnd = this.markerDescriptionInput.value.length;
+        this.updateStatus('설명 입력칸에 번호 목록을 삽입했습니다');
     }
 
     renderMarkerList() {

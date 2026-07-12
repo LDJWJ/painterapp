@@ -187,7 +187,11 @@
             </label>
             <div class="marker-description-box">
                 <textarea id="markerDescriptionInput" rows="3" placeholder="설명을 줄마다 붙여넣기"></textarea>
-                <button class="fmt-btn marker-create-btn" id="createMarkersBtn" type="button">마커 생성</button>
+                <div class="marker-actions">
+                    <button class="fmt-btn marker-create-btn" id="createMarkersBtn" type="button">마커 생성</button>
+                    <button class="fmt-btn" id="copyMarkerTemplateBtn" type="button">번호 복사</button>
+                    <button class="fmt-btn" id="insertMarkerTemplateBtn" type="button">번호 삽입</button>
+                </div>
                 <div class="marker-list" id="markerList"></div>
             </div>
         </div>
@@ -209,6 +213,10 @@
             <span id="imageSize"></span>
         </div>
     </div>
+
+    <a class="visitor-counter" href="https://visitorbadge.io/status?path=https%3A%2F%2Fldjwj.github.io%2Fpainterapp%2F" target="_blank" rel="noopener noreferrer" title="방문자 수">
+        <img src="https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fldjwj.github.io%2Fpainterapp%2F&label=%EB%B0%A9%EB%AC%B8%EC%9E%90&countColor=%23e94560" alt="방문자 수">
+    </a>
 
     <!-- 리사이즈 모달 -->
     <div class="modal-backdrop" id="resizeModal">
