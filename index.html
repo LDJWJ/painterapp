@@ -179,6 +179,17 @@
             <button class="fmt-btn" id="alignLeftBtn" title="왼쪽 정렬">왼</button>
             <button class="fmt-btn" id="alignCenterBtn" title="가운데 정렬">중</button>
             <button class="fmt-btn" id="alignRightBtn" title="오른쪽 정렬">오</button>
+            <div class="separator"></div>
+            <label class="marker-size-control">
+                <span class="tb-label">번호 크기</span>
+                <input type="range" id="markerSizeInput" min="18" max="64" value="28">
+                <span id="markerSizeValue">28px</span>
+            </label>
+            <div class="marker-description-box">
+                <textarea id="markerDescriptionInput" rows="3" placeholder="설명을 줄마다 붙여넣기"></textarea>
+                <button class="fmt-btn marker-create-btn" id="createMarkersBtn" type="button">마커 생성</button>
+                <div class="marker-list" id="markerList"></div>
+            </div>
         </div>
 
         <div class="canvas-container">

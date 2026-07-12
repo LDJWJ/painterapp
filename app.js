@@ -40,6 +40,11 @@ class PainterApp {
         this.alignLeftBtn = document.getElementById('alignLeftBtn');
         this.alignCenterBtn = document.getElementById('alignCenterBtn');
         this.alignRightBtn = document.getElementById('alignRightBtn');
+        this.markerSizeInput = document.getElementById('markerSizeInput');
+        this.markerSizeValue = document.getElementById('markerSizeValue');
+        this.markerDescriptionInput = document.getElementById('markerDescriptionInput');
+        this.createMarkersBtn = document.getElementById('createMarkersBtn');
+        this.markerList = document.getElementById('markerList');
 
         // Drawing state
         this.currentTool = 'select';
@@ -88,13 +93,19 @@ class PainterApp {
         // Text object system
         this.textOverlay = null;
         this.textObjects = [];
+        this.markerObjects = [];
         this.selectedTextId = null;
+        this.selectedMarkerId = null;
         this.isDraggingText = false;
+        this.isDraggingMarker = false;
         this.textDragMoved = false;
+        this.markerDragMoved = false;
         this._textWasSelected = false;
         this.dragOffsetX = 0;
         this.dragOffsetY = 0;
         this.textIdCounter = 0;
+        this.markerIdCounter = 0;
+        this.markerSize = 28;
 
         this.init();
     }
@@ -254,6 +265,19 @@ class PainterApp {
         this.alignLeftBtn.addEventListener('click', () => this.setTextAlign('left'));
         this.alignCenterBtn.addEventListener('click', () => this.setTextAlign('center'));
         this.alignRightBtn.addEventListener('click', () => this.setTextAlign('right'));
+
+        this.markerSizeInput.addEventListener('input', (e) => {
+            this.markerSize = parseInt(e.target.value) || 28;
+            this.markerSizeValue.textContent = `${this.markerSize}px`;
+            this.renderTextLayer();
+            this.renderMarkerList();
+        });
+        this.markerSizeInput.addEventListener('change', () => {
+            if (this.hasImage) this.saveState();
+        });
+        this.createMarkersBtn.addEventListener('click', () => this.createMarkersFromDescription());
+        this.markerDescriptionInput.addEventListener('keydown', (e) => e.stopPropagation());
+        this.markerDescriptionInput.addEventListener('paste', (e) => e.stopPropagation());
     }
 
     // ---------- Tool management ----------
@@ -286,7 +310,11 @@ class PainterApp {
                 this.ctx.drawImage(img, 0, 0);
                 this.hasImage = true;
                 this.textObjects = [];
+                this.markerObjects = [];
                 this.selectedTextId = null;
+                this.selectedMarkerId = null;
+                this.markerIdCounter = 0;
+                this.renderMarkerList();
                 this.placeholder.classList.add('hidden');
                 this.canvas.style.display = 'block';
                 this.overlayCanvas.style.display = 'block';
@@ -305,7 +333,9 @@ class PainterApp {
     selectTool(tool) {
         this.dismissTextOverlay();
         this.selectedTextId = null;
+        this.selectedMarkerId = null;
         this.renderTextLayer();
+        this.renderMarkerList();
         this.currentTool = tool;
         this.toolButtons.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tool === tool);
@@ -361,19 +391,36 @@ class PainterApp {
             return;
         }
         if (this.currentTool === 'text') {
+            const markerHit = this.getMarkerObjectAt(coords.x, coords.y);
+            if (markerHit) {
+                this.selectedTextId = null;
+                this.selectedMarkerId = markerHit.id;
+                this.isDraggingMarker = true;
+                this.markerDragMoved = false;
+                this.dragOffsetX = coords.x - markerHit.x;
+                this.dragOffsetY = coords.y - markerHit.y;
+                this.renderTextLayer();
+                this.renderMarkerList();
+                return;
+            }
+
             const hit = this.getTextObjectAt(coords.x, coords.y);
             if (hit) {
                 this._textWasSelected = (hit.id === this.selectedTextId);
                 this.selectedTextId = hit.id;
+                this.selectedMarkerId = null;
                 this.isDraggingText = true;
                 this.textDragMoved = false;
                 this.dragOffsetX = coords.x - hit.x;
                 this.dragOffsetY = coords.y - hit.y;
                 this.syncToolbarToObj(hit);
                 this.renderTextLayer();
+                this.renderMarkerList();
             } else {
                 this.selectedTextId = null;
+                this.selectedMarkerId = null;
                 this.renderTextLayer();
+                this.renderMarkerList();
                 this.showTextOverlay(coords.x, coords.y, e.clientX, e.clientY);
             }
             return;
@@ -395,6 +442,18 @@ class PainterApp {
                 obj.x = coords.x - this.dragOffsetX;
                 obj.y = coords.y - this.dragOffsetY;
                 this.textDragMoved = true;
+                this.renderTextLayer();
+            }
+            return;
+        }
+
+        if (this.isDraggingMarker && this.currentTool === 'text') {
+            const coords = this.getCanvasCoords(e);
+            const obj = this.markerObjects.find(o => o.id === this.selectedMarkerId);
+            if (obj) {
+                obj.x = coords.x - this.dragOffsetX;
+                obj.y = coords.y - this.dragOffsetY;
+                this.markerDragMoved = true;
                 this.renderTextLayer();
             }
             return;
@@ -436,6 +495,17 @@ class PainterApp {
                 if (obj) this.showTextEditOverlay(obj, e.clientX, e.clientY);
             }
             this._textWasSelected = false;
+            return;
+        }
+
+        if (this.isDraggingMarker && this.currentTool === 'text') {
+            this.isDraggingMarker = false;
+            if (this.markerDragMoved) {
+                this.saveState();
+                this.updateStatus('번호 마커를 이동했습니다');
+            }
+            this.markerDragMoved = false;
+            this.renderMarkerList();
             return;
         }
 
@@ -490,6 +560,16 @@ class PainterApp {
                 this.updateStatus('텍스트 이동됨');
             }
             this._textWasSelected = false;
+            return;
+        }
+        if (this.isDraggingMarker) {
+            this.isDraggingMarker = false;
+            if (this.markerDragMoved) {
+                this.saveState();
+                this.updateStatus('번호 마커를 이동했습니다');
+            }
+            this.markerDragMoved = false;
+            this.renderMarkerList();
             return;
         }
         this.handleMouseUp(e);
@@ -629,7 +709,9 @@ class PainterApp {
     saveState() {
         this.history.push({
             canvas: this.canvas.toDataURL(),
-            textObjects: JSON.parse(JSON.stringify(this.textObjects))
+            textObjects: JSON.parse(JSON.stringify(this.textObjects)),
+            markerObjects: JSON.parse(JSON.stringify(this.markerObjects)),
+            markerSize: this.markerSize
         });
         if (this.history.length > this.maxHistory) this.history.shift();
     }
@@ -648,9 +730,16 @@ class PainterApp {
             this.updateStatus('실행 취소됨');
         };
         img.src = prev.canvas;
-        this.textObjects = JSON.parse(JSON.stringify(prev.textObjects));
+        this.textObjects = JSON.parse(JSON.stringify(prev.textObjects || []));
+        this.markerObjects = JSON.parse(JSON.stringify(prev.markerObjects || []));
+        this.markerSize = prev.markerSize || 28;
+        this.markerSizeInput.value = this.markerSize;
+        this.markerSizeValue.textContent = `${this.markerSize}px`;
+        this.markerIdCounter = this.markerObjects.reduce((max, marker) => Math.max(max, marker.id), 0);
         this.selectedTextId = null;
+        this.selectedMarkerId = null;
         this.renderTextLayer();
+        this.renderMarkerList();
     }
 
     // ---------- Output ----------
@@ -666,6 +755,10 @@ class PainterApp {
         for (const obj of this.textObjects) {
             const scaled = Object.assign({}, obj, { x: obj.x * scale, y: obj.y * scale, fontSize: obj.fontSize * scale });
             this._renderTextToCtx(ctx, scaled, false);
+        }
+        for (const marker of this.markerObjects) {
+            const scaled = Object.assign({}, marker, { x: marker.x * scale, y: marker.y * scale });
+            this._renderMarkerToCtx(ctx, scaled, this.markerSize * scale, false);
         }
         return temp;
     }
@@ -772,15 +865,18 @@ class PainterApp {
         const scaleX = newW / this.canvas.width;
         const scaleY = newH / this.canvas.height;
 
-        // 현재 합성 이미지를 새 크기로 그리기
-        const composite = this.getCompositeCanvas();
+        // Resize the base canvas only; text and marker overlays remain editable objects.
+        const baseCanvas = document.createElement('canvas');
+        baseCanvas.width = this.canvas.width;
+        baseCanvas.height = this.canvas.height;
+        baseCanvas.getContext('2d').drawImage(this.canvas, 0, 0);
         this.canvas.width = newW;
         this.canvas.height = newH;
         this.overlayCanvas.width = newW;
         this.overlayCanvas.height = newH;
         this.textCanvas.width = newW;
         this.textCanvas.height = newH;
-        this.ctx.drawImage(composite, 0, 0, newW, newH);
+        this.ctx.drawImage(baseCanvas, 0, 0, newW, newH);
 
         // 텍스트 오브젝트 좌표/크기도 비율에 맞게 조정
         this.textObjects = this.textObjects.map(obj => ({
@@ -789,11 +885,20 @@ class PainterApp {
             y: obj.y * scaleY,
             fontSize: Math.round(obj.fontSize * Math.min(scaleX, scaleY))
         }));
+        this.markerObjects = this.markerObjects.map(obj => ({
+            ...obj,
+            x: obj.x * scaleX,
+            y: obj.y * scaleY
+        }));
+        this.markerSize = Math.max(18, Math.min(64, Math.round(this.markerSize * Math.min(scaleX, scaleY))));
+        this.markerSizeInput.value = this.markerSize;
+        this.markerSizeValue.textContent = `${this.markerSize}px`;
 
         this.saveState();
         this.imageSize.textContent = `${newW} x ${newH}`;
         this.updateOutputSizeLabel();
         this.renderTextLayer();
+        this.renderMarkerList();
         this.closeResizeModal();
         this.showToast(`${newW} x ${newH} 으로 리사이즈됨`);
         this.updateStatus(`이미지 리사이즈: ${newW} x ${newH}`);
@@ -832,6 +937,16 @@ class PainterApp {
             this.renderTextLayer();
             this.saveState();
             this.updateStatus('텍스트 삭제됨');
+            return;
+        }
+        if (e.key === 'Delete' && this.currentTool === 'text' && this.selectedMarkerId !== null) {
+            e.preventDefault();
+            this.markerObjects = this.markerObjects.filter(o => o.id !== this.selectedMarkerId);
+            this.selectedMarkerId = null;
+            this.renderTextLayer();
+            this.renderMarkerList();
+            this.saveState();
+            this.updateStatus('번호 마커를 삭제했습니다');
             return;
         }
 
@@ -954,11 +1069,117 @@ class PainterApp {
         return null;
     }
 
+    getMarkerObjectAt(x, y) {
+        const radius = this.markerSize / 2;
+        for (let i = this.markerObjects.length - 1; i >= 0; i--) {
+            const obj = this.markerObjects[i];
+            const dx = x - obj.x;
+            const dy = y - obj.y;
+            if (Math.sqrt(dx * dx + dy * dy) <= radius + 4) {
+                return obj;
+            }
+        }
+        return null;
+    }
+
     renderTextLayer() {
         const ctx = this.textCtx;
         ctx.clearRect(0, 0, this.textCanvas.width, this.textCanvas.height);
         for (const obj of this.textObjects) {
             this._renderTextToCtx(ctx, obj, obj.id === this.selectedTextId);
+        }
+        for (const marker of this.markerObjects) {
+            this._renderMarkerToCtx(ctx, marker, this.markerSize, marker.id === this.selectedMarkerId);
+        }
+    }
+
+    _renderMarkerToCtx(ctx, marker, size, selected) {
+        const radius = size / 2;
+        const fontSize = Math.max(10, Math.round(size * (marker.number >= 100 ? 0.36 : marker.number >= 10 ? 0.42 : 0.48)));
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(marker.x, marker.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#e94560';
+        ctx.fill();
+        ctx.lineWidth = Math.max(2, size * 0.08);
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
+
+        if (selected) {
+            ctx.beginPath();
+            ctx.arc(marker.x, marker.y, radius + 5, 0, Math.PI * 2);
+            ctx.strokeStyle = '#4da3ff';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 3]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        ctx.font = `700 ${fontSize}px "Pretendard", "Noto Sans KR", sans-serif`;
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(marker.number), marker.x, marker.y + 0.5);
+        ctx.restore();
+    }
+
+    createMarkersFromDescription() {
+        if (!this.hasImage) {
+            this.showToast('이미지를 먼저 붙여넣어 주세요');
+            return;
+        }
+        const lines = this.markerDescriptionInput.value
+            .split(/\r?\n/)
+            .map(line => line.trim())
+            .filter(Boolean);
+        if (!lines.length) {
+            this.showToast('설명을 한 줄 이상 입력해 주세요');
+            return;
+        }
+
+        const startX = Math.min(40, Math.max(24, this.canvas.width * 0.08));
+        const startY = Math.min(40, Math.max(24, this.canvas.height * 0.08));
+        const step = Math.max(this.markerSize + 18, 50);
+        const nextNumber = this.markerObjects.reduce((max, marker) => Math.max(max, marker.number), 0) + 1;
+        const newMarkers = lines.map((description, index) => ({
+            id: ++this.markerIdCounter,
+            number: nextNumber + index,
+            x: startX,
+            y: Math.min(this.canvas.height - this.markerSize / 2, startY + index * step),
+            description
+        }));
+
+        this.markerObjects.push(...newMarkers);
+        this.selectedTextId = null;
+        this.selectedMarkerId = newMarkers[0].id;
+        this.markerDescriptionInput.value = '';
+        this.renderTextLayer();
+        this.renderMarkerList();
+        this.saveState();
+        this.updateStatus('설명 번호 마커를 생성했습니다');
+    }
+
+    renderMarkerList() {
+        if (!this.markerList) return;
+        this.markerList.innerHTML = '';
+        if (!this.markerObjects.length) {
+            return;
+        }
+
+        for (const marker of this.markerObjects) {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'marker-list-item';
+            item.classList.toggle('active', marker.id === this.selectedMarkerId);
+            item.innerHTML = `<span>${marker.number}</span><em></em>`;
+            item.querySelector('em').textContent = marker.description;
+            item.addEventListener('click', () => {
+                this.selectedTextId = null;
+                this.selectedMarkerId = marker.id;
+                this.renderTextLayer();
+                this.renderMarkerList();
+            });
+            this.markerList.appendChild(item);
         }
     }
 
@@ -1026,6 +1247,8 @@ class PainterApp {
         this.alignLeftBtn.classList.toggle('active', this.textAlign === 'left');
         this.alignCenterBtn.classList.toggle('active', this.textAlign === 'center');
         this.alignRightBtn.classList.toggle('active', this.textAlign === 'right');
+        this.markerSizeInput.value = this.markerSize;
+        this.markerSizeValue.textContent = `${this.markerSize}px`;
     }
 
     setTextAlign(align) {

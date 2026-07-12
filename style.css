@@ -141,7 +141,8 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 #lineWidthValue,
-#blockSizeValue {
+#blockSizeValue,
+#markerSizeValue {
     font-size: 11px;
     color: #888;
     min-width: 30px;
@@ -365,6 +366,93 @@ input[type="range"]::-webkit-slider-thumb {
 }
 .fmt-btn:hover { background-color: #1a4a7a; }
 .fmt-btn.active { background-color: #e94560; border-color: #e94560; }
+
+.marker-size-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.marker-description-box {
+    display: grid;
+    grid-template-columns: minmax(180px, 260px) auto minmax(160px, 240px);
+    align-items: stretch;
+    gap: 6px;
+}
+
+.marker-description-box textarea {
+    width: 100%;
+    min-height: 54px;
+    resize: vertical;
+    background-color: #0f3460;
+    color: #eee;
+    border: 1px solid #1a4a7a;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font: 12px/1.4 inherit;
+    outline: none;
+}
+
+.marker-description-box textarea:focus {
+    border-color: #e94560;
+}
+
+.marker-create-btn {
+    align-self: stretch;
+    white-space: nowrap;
+}
+
+.marker-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    max-height: 72px;
+    overflow: auto;
+}
+
+.marker-list-item {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    border: 1px solid #1a4a7a;
+    border-radius: 4px;
+    background-color: #0f3460;
+    color: #eee;
+    padding: 3px 6px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.marker-list-item:hover,
+.marker-list-item.active {
+    border-color: #e94560;
+    background-color: #1a4a7a;
+}
+
+.marker-list-item span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #e94560;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.marker-list-item em {
+    overflow: hidden;
+    color: #ddd;
+    font-size: 12px;
+    font-style: normal;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
 /* Text Input Overlay */
 .text-input-overlay {
