@@ -1167,8 +1167,13 @@ class PainterApp {
         return markers
             .slice()
             .sort((a, b) => a.number - b.number)
-            .map(marker => `${marker.number}. `)
+            .map(marker => `${this.formatMarkerNumber(marker.number)} `)
             .join('\n');
+    }
+
+    formatMarkerNumber(number) {
+        const circledNumbers = ['❶', '❷', '❸', '❹', '❺', '❻', '❼', '❽', '❾', '❿'];
+        return circledNumbers[number - 1] || `${number}.`;
     }
 
     async copyMarkerNumberTemplate() {
@@ -1221,7 +1226,7 @@ class PainterApp {
             item.type = 'button';
             item.className = 'marker-list-item';
             item.classList.toggle('active', marker.id === this.selectedMarkerId);
-            item.innerHTML = `<span>${marker.number}</span><em></em>`;
+            item.innerHTML = `<span>${this.formatMarkerNumber(marker.number)}</span><em></em>`;
             item.querySelector('em').textContent = marker.description;
             item.addEventListener('click', () => {
                 this.selectedTextId = null;
