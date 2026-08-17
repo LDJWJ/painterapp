@@ -99,6 +99,13 @@ body {
     font-size: 11px;
 }
 
+.text-panel-indicator {
+    display: inline-block;
+    width: 10px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 9px;
+}
+
 /* Color Options */
 .option-label {
     display: flex;
@@ -202,8 +209,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .zoom-btn,
-.zoom-reset-btn,
-.context-toggle-btn {
+.zoom-reset-btn {
     height: 34px;
     border: 0;
     background-color: #0f3460;
@@ -224,24 +230,8 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .zoom-btn:hover,
-.zoom-reset-btn:hover,
-.context-toggle-btn:hover {
+.zoom-reset-btn:hover {
     background-color: #1a4a7a;
-}
-
-.context-toggle-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 0 10px;
-    border: 1px solid #1a4a7a;
-    border-radius: 6px;
-    font-size: 12px;
-}
-
-.context-toggle-btn > span:first-child {
-    font-size: 15px;
-    font-weight: 700;
 }
 
 .thickness-presets {

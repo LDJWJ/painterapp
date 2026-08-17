@@ -45,9 +45,10 @@
                     <span class="icon">🖱</span>
                     <span class="label">우클릭</span>
                 </button>
-                <button class="tool-btn" data-tool="text" title="텍스트 입력">
+                <button class="tool-btn" data-tool="text" id="textToolBtn" title="텍스트 입력 · 다시 클릭하여 서식 접기/펼치기"
+                        aria-controls="textToolbar" aria-expanded="false">
                     <span class="icon">T</span>
-                    <span class="label">텍스트</span>
+                    <span class="label">텍스트 <span class="text-panel-indicator" id="textPanelIndicator">⌄</span></span>
                 </button>
             </div>
 
@@ -98,14 +99,6 @@
                     <input type="range" id="blockSize" min="10" max="30" value="15">
                     <span id="blockSizeValue">15px</span>
                 </label>
-            </div>
-
-            <div class="option-group context-option" data-tools="text">
-                <button class="context-toggle-btn" id="textToolbarToggleBtn" type="button"
-                        aria-controls="textToolbar" aria-expanded="true" title="텍스트 서식 열기/접기">
-                    <span aria-hidden="true">T</span>
-                    <span id="textToolbarToggleLabel">서식 접기</span>
-                </button>
             </div>
 
             <div class="separator"></div>

@@ -32,8 +32,8 @@ class PainterApp {
 
         // Text toolbar elements
         this.textToolbar = document.getElementById('textToolbar');
-        this.textToolbarToggleBtn = document.getElementById('textToolbarToggleBtn');
-        this.textToolbarToggleLabel = document.getElementById('textToolbarToggleLabel');
+        this.textToolBtn = document.getElementById('textToolBtn');
+        this.textPanelIndicator = document.getElementById('textPanelIndicator');
         this.contextOptions = document.querySelectorAll('.context-option');
         this.fontFamilySelect = document.getElementById('fontFamily');
         this.fontSizeInput = document.getElementById('textFontSize');
@@ -128,10 +128,6 @@ class PainterApp {
 
         this.toolButtons.forEach(btn => {
             btn.addEventListener('click', () => this.selectTool(btn.dataset.tool));
-        });
-
-        this.textToolbarToggleBtn.addEventListener('click', () => {
-            this.setTextToolbarExpanded(!this.textToolbarExpanded);
         });
 
         this.colorPicker.addEventListener('input', (e) => {
@@ -344,6 +340,13 @@ class PainterApp {
     }
 
     selectTool(tool) {
+        if (tool === 'text' && this.currentTool === 'text') {
+            this.dismissTextOverlay();
+            this.setTextToolbarExpanded(!this.textToolbarExpanded);
+            this.updateStatus(this.textToolbarExpanded ? '텍스트 서식 펼침' : '텍스트 서식 접힘');
+            return;
+        }
+
         this.dismissTextOverlay();
         this.selectedTextId = null;
         this.selectedMarkerId = null;
@@ -368,8 +371,8 @@ class PainterApp {
         const showTextToolbar = this.currentTool === 'text' && this.textToolbarExpanded;
         this.textToolbar.classList.toggle('visible', showTextToolbar);
         this.textToolbar.setAttribute('aria-hidden', String(!showTextToolbar));
-        this.textToolbarToggleBtn.setAttribute('aria-expanded', String(showTextToolbar));
-        this.textToolbarToggleLabel.textContent = showTextToolbar ? '서식 접기' : '서식 펼치기';
+        this.textToolBtn.setAttribute('aria-expanded', String(showTextToolbar));
+        this.textPanelIndicator.textContent = showTextToolbar ? '⌃' : '⌄';
     }
 
     setTextToolbarExpanded(expanded) {
