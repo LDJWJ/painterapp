@@ -32,6 +32,9 @@ class PainterApp {
 
         // Text toolbar elements
         this.textToolbar = document.getElementById('textToolbar');
+        this.textToolbarToggleBtn = document.getElementById('textToolbarToggleBtn');
+        this.textToolbarToggleLabel = document.getElementById('textToolbarToggleLabel');
+        this.contextOptions = document.querySelectorAll('.context-option');
         this.fontFamilySelect = document.getElementById('fontFamily');
         this.fontSizeInput = document.getElementById('textFontSize');
         this.boldBtn = document.getElementById('boldBtn');
@@ -108,6 +111,7 @@ class PainterApp {
         this.textIdCounter = 0;
         this.markerIdCounter = 0;
         this.markerSize = 28;
+        this.textToolbarExpanded = true;
 
         this.init();
     }
@@ -116,6 +120,7 @@ class PainterApp {
         this.bindEvents();
         this.updatePresetColorActive();
         this.updateTextToolbarUI();
+        this.updateContextualToolbar();
     }
 
     bindEvents() {
@@ -123,6 +128,10 @@ class PainterApp {
 
         this.toolButtons.forEach(btn => {
             btn.addEventListener('click', () => this.selectTool(btn.dataset.tool));
+        });
+
+        this.textToolbarToggleBtn.addEventListener('click', () => {
+            this.setTextToolbarExpanded(!this.textToolbarExpanded);
         });
 
         this.colorPicker.addEventListener('input', (e) => {
@@ -346,9 +355,26 @@ class PainterApp {
         });
         this.selection = null;
         this.clearOverlay();
-        // Show/hide text toolbar
-        this.textToolbar.classList.toggle('visible', tool === 'text');
+        if (tool === 'text') this.textToolbarExpanded = true;
+        this.updateContextualToolbar();
         this.updateStatus(`도구: ${this.getToolName(tool)}`);
+    }
+
+    updateContextualToolbar() {
+        this.contextOptions.forEach(group => {
+            const tools = (group.dataset.tools || '').split(/\s+/);
+            group.classList.toggle('visible', tools.includes(this.currentTool));
+        });
+        const showTextToolbar = this.currentTool === 'text' && this.textToolbarExpanded;
+        this.textToolbar.classList.toggle('visible', showTextToolbar);
+        this.textToolbar.setAttribute('aria-hidden', String(!showTextToolbar));
+        this.textToolbarToggleBtn.setAttribute('aria-expanded', String(showTextToolbar));
+        this.textToolbarToggleLabel.textContent = showTextToolbar ? '서식 접기' : '서식 펼치기';
+    }
+
+    setTextToolbarExpanded(expanded) {
+        this.textToolbarExpanded = expanded;
+        this.updateContextualToolbar();
     }
 
     getToolName(tool) {
@@ -1395,6 +1421,7 @@ class PainterApp {
                 this.renderTextLayer();
                 this.saveState();
                 this.updateStatus('텍스트 추가됨 — 드래그로 이동, 다시 클릭으로 수정, Delete로 삭제');
+                this.setTextToolbarExpanded(false);
             }
             this.dismissTextOverlay();
         };

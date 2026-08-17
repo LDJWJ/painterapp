@@ -26,7 +26,10 @@ body {
     padding: 10px 16px;
     background-color: #16213e;
     border-bottom: 1px solid #0f3460;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
 }
 
 .tool-group,
@@ -38,10 +41,25 @@ body {
 }
 
 .separator {
+    flex: 0 0 1px;
     width: 1px;
     height: 32px;
     background-color: #0f3460;
     margin: 0 8px;
+}
+
+.tool-group,
+.option-group,
+.action-group {
+    flex-shrink: 0;
+}
+
+.context-option {
+    display: none;
+}
+
+.context-option.visible {
+    display: flex;
 }
 
 /* Tool Buttons */
@@ -174,6 +192,56 @@ input[type="range"]::-webkit-slider-thumb {
     min-width: 36px;
     text-align: center;
     display: block;
+}
+
+.zoom-group {
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid #1a4a7a;
+    border-radius: 6px;
+}
+
+.zoom-btn,
+.zoom-reset-btn,
+.context-toggle-btn {
+    height: 34px;
+    border: 0;
+    background-color: #0f3460;
+    color: #eee;
+    cursor: pointer;
+}
+
+.zoom-btn {
+    width: 34px;
+    font-size: 19px;
+}
+
+.zoom-reset-btn {
+    min-width: 54px;
+    padding: 0 7px;
+    border-right: 1px solid #1a4a7a;
+    border-left: 1px solid #1a4a7a;
+}
+
+.zoom-btn:hover,
+.zoom-reset-btn:hover,
+.context-toggle-btn:hover {
+    background-color: #1a4a7a;
+}
+
+.context-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 10px;
+    border: 1px solid #1a4a7a;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.context-toggle-btn > span:first-child {
+    font-size: 15px;
+    font-weight: 700;
 }
 
 .thickness-presets {
