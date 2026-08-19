@@ -214,6 +214,14 @@
             </div>
         </div>
 
+        <!-- 선택 영역 실행 바 (영역을 선택하면 그 자리에 떠서 바로 실행) -->
+        <div class="selection-actions" id="selectionActions" hidden>
+            <button class="sel-act" id="selMoveBtn" type="button" title="선택 영역 안쪽을 드래그해 옮기기">✥ 이동</button>
+            <button class="sel-act" id="selPullBtn" type="button" title="선택한 폭 안에서만 잘라내고 아래를 위로 당기기 (Alt + Delete)">↥ 선택 폭 당기기</button>
+            <button class="sel-act" id="selCutBtn" type="button" title="가로 한 줄 전체를 잘라내고 아래를 위로 당기기 (Shift + Delete)">✂ 줄 전체 당기기</button>
+            <button class="sel-act" id="selEraseBtn" type="button" title="선택 영역을 흰색으로 지우기 (Delete)">⌫ 지우기</button>
+        </div>
+
         <div class="status-bar">
             <span id="statusText">이미지를 붙여넣어 시작하세요</span>
             <span id="imageSize"></span>

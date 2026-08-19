@@ -310,6 +310,41 @@ input[type="range"]::-webkit-slider-thumb {
     display: none;
 }
 
+/* 선택 영역 실행 바 */
+.selection-actions {
+    position: fixed;
+    z-index: 60;
+    display: flex;
+    flex-wrap: wrap;
+    max-width: calc(100vw - 16px);
+    gap: 4px;
+    padding: 4px;
+    background-color: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.selection-actions[hidden] {
+    display: none;
+}
+
+.sel-act {
+    border: none;
+    border-radius: 5px;
+    padding: 5px 9px;
+    background-color: #0f3460;
+    color: #eee;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.sel-act:hover {
+    background-color: #e94560;
+}
+
 .placeholder {
     text-align: center;
     color: #666;
