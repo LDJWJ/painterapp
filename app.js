@@ -70,6 +70,16 @@ class PainterApp {
         // Selection
         this.selection = null;
 
+        // Selection move (이동 도구) / band cut (잘라내기 도구)
+        this.isMovingSelection = false;
+        this.moveFloatCanvas = null;
+        this.moveBaseState = null;
+        this.moveOriginX = 0;
+        this.moveOriginY = 0;
+        this.moveGrabDX = 0;
+        this.moveGrabDY = 0;
+        this.moveDragged = false;
+
         // Text formatting defaults
         this.textFontFamily = 'Pretendard';
         this.textFontSize = 24;
@@ -347,6 +357,7 @@ class PainterApp {
             return;
         }
 
+        const prevTool = this.currentTool;
         this.dismissTextOverlay();
         this.selectedTextId = null;
         this.selectedMarkerId = null;
@@ -356,8 +367,17 @@ class PainterApp {
         this.toolButtons.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tool === tool);
         });
-        this.selection = null;
-        this.clearOverlay();
+        // 선택 계열 도구끼리 전환할 때는 선택 영역을 유지 (선택 -> 이동 / 잘라내기 연결)
+        const selectionTools = ['select', 'move', 'cutband'];
+        if (this.selection && selectionTools.includes(tool) && selectionTools.includes(prevTool)) {
+            const sel = this.selection;
+            this.clearOverlay();
+            this.drawSelectionPreview(sel.x, sel.y, sel.width, sel.height);
+        } else {
+            this.selection = null;
+            this.clearOverlay();
+        }
+        this.canvas.style.cursor = this.getToolCursor(tool);
         if (tool === 'text') this.textToolbarExpanded = true;
         this.updateContextualToolbar();
         this.updateStatus(`도구: ${this.getToolName(tool)}`);
@@ -384,9 +404,16 @@ class PainterApp {
         const names = {
             select: '선택', rectangle: '사각형', arrow: '화살표',
             mosaic: '모자이크', erase: '삭제',
+            move: '이동', cutband: '잘라내기',
             leftclick: '좌클릭 아이콘', rightclick: '우클릭 아이콘', text: '텍스트'
         };
         return names[tool] || tool;
+    }
+
+    getToolCursor(tool) {
+        if (tool === 'cutband') return 'row-resize';
+        if (tool === 'move') return 'move';
+        return 'crosshair';
     }
 
     updatePresetColorActive() {
@@ -459,6 +486,10 @@ class PainterApp {
             return;
         }
 
+        if (this.currentTool === 'move' && this.isInsideSelection(coords.x, coords.y)) {
+            if (this.beginSelectionMove(coords)) return;
+        }
+
         this.isDrawing = true;
         this.startX = coords.x;
         this.startY = coords.y;
@@ -492,6 +523,16 @@ class PainterApp {
             return;
         }
 
+        if (this.isMovingSelection) {
+            this.updateSelectionMove(this.getCanvasCoords(e));
+            return;
+        }
+
+        if (this.currentTool === 'move' && !this.isDrawing) {
+            const hover = this.getCanvasCoords(e);
+            this.canvas.style.cursor = this.isInsideSelection(hover.x, hover.y) ? 'move' : 'crosshair';
+        }
+
         if (!this.isDrawing) return;
         const coords = this.getCanvasCoords(e);
         const width = coords.x - this.startX;
@@ -499,10 +540,15 @@ class PainterApp {
 
         switch (this.currentTool) {
             case 'select':
+            case 'move':
             case 'mosaic':
             case 'erase':
                 this.clearOverlay();
                 this.drawSelectionPreview(this.startX, this.startY, width, height);
+                break;
+            case 'cutband':
+                this.clearOverlay();
+                this.drawBandPreview(this.startY, coords.y);
                 break;
             case 'rectangle':
                 this.ctx.putImageData(this.tempState, 0, 0);
@@ -542,6 +588,11 @@ class PainterApp {
             return;
         }
 
+        if (this.isMovingSelection) {
+            this.finishSelectionMove();
+            return;
+        }
+
         if (!this.isDrawing) return;
         this.isDrawing = false;
         const coords = this.getCanvasCoords(e);
@@ -550,6 +601,7 @@ class PainterApp {
 
         switch (this.currentTool) {
             case 'select':
+            case 'move':
                 this.clearOverlay();
                 this.selection = {
                     x: Math.min(this.startX, coords.x),
@@ -558,7 +610,13 @@ class PainterApp {
                     height: Math.abs(height)
                 };
                 this.drawSelectionPreview(this.startX, this.startY, width, height);
-                this.updateStatus('영역 선택됨 - DELETE 키로 삭제 또는 모자이크 도구 사용');
+                this.updateStatus(this.currentTool === 'move'
+                    ? '영역 선택됨 - 선택 영역 안쪽을 드래그하면 이동합니다'
+                    : '영역 선택됨 - DELETE 삭제 / SHIFT+DELETE 잘라내고 아래를 위로 당기기');
+                break;
+            case 'cutband':
+                this.clearOverlay();
+                this.cutBand(Math.min(this.startY, coords.y), Math.abs(height));
                 break;
             case 'rectangle':
                 this.ctx.putImageData(this.tempState, 0, 0);
@@ -622,6 +680,28 @@ class PainterApp {
         this.overlayCtx.setLineDash([]);
         this.overlayCtx.fillStyle = 'rgba(233, 69, 96, 0.1)';
         this.overlayCtx.fillRect(x, y, width, height);
+    }
+
+    drawBandPreview(y1, y2) {
+        const top = Math.min(y1, y2);
+        const h = Math.abs(y2 - y1);
+        const w = this.overlayCanvas.width;
+        this.overlayCtx.fillStyle = 'rgba(233, 69, 96, 0.22)';
+        this.overlayCtx.fillRect(0, top, w, h);
+        this.overlayCtx.strokeStyle = '#e94560';
+        this.overlayCtx.lineWidth = 2;
+        this.overlayCtx.setLineDash([6, 4]);
+        this.overlayCtx.beginPath();
+        this.overlayCtx.moveTo(0, top);
+        this.overlayCtx.lineTo(w, top);
+        this.overlayCtx.moveTo(0, top + h);
+        this.overlayCtx.lineTo(w, top + h);
+        this.overlayCtx.stroke();
+        this.overlayCtx.setLineDash([]);
+        this.overlayCtx.fillStyle = '#e94560';
+        this.overlayCtx.font = 'bold 14px sans-serif';
+        const labelY = top > 20 ? top - 6 : top + h + 18;
+        this.overlayCtx.fillText(`${Math.round(h)}px 잘라내고 위로 당기기`, 8, labelY);
     }
 
     drawRectangle(x, y, width, height) {
@@ -758,8 +838,15 @@ class PainterApp {
         const prev = this.history[this.history.length - 1];
         const img = new Image();
         img.onload = () => {
+            // 잘라내기 / 리사이즈로 크기가 달라졌다면 캔버스 크기부터 되돌린다
+            if (img.width !== this.canvas.width || img.height !== this.canvas.height) {
+                this.setCanvasSize(img.width, img.height);
+                this.imageSize.textContent = `${img.width} x ${img.height}`;
+                this.updateOutputSizeLabel();
+            }
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             this.ctx.drawImage(img, 0, 0);
+            this.renderTextLayer();
             this.updateStatus('실행 취소됨');
         };
         img.src = prev.canvas;
@@ -997,7 +1084,8 @@ class PainterApp {
         }
         if (e.key === 'Delete' && this.selection && this.hasImage) {
             e.preventDefault();
-            this.deleteSelection();
+            if (e.shiftKey) this.cutBandFromSelection();
+            else this.deleteSelection();
         }
     }
 
@@ -1519,6 +1607,134 @@ class PainterApp {
 
     // ---------- Misc ----------
 
+    setCanvasSize(w, h) {
+        this.canvas.width = w;
+        this.canvas.height = h;
+        this.overlayCanvas.width = w;
+        this.overlayCanvas.height = h;
+        this.textCanvas.width = w;
+        this.textCanvas.height = h;
+    }
+
+    isInsideSelection(x, y) {
+        const sel = this.selection;
+        if (!sel || sel.width < 2 || sel.height < 2) return false;
+        return x >= sel.x && x <= sel.x + sel.width && y >= sel.y && y <= sel.y + sel.height;
+    }
+
+    // ---------- 선택 영역 이동 ----------
+
+    beginSelectionMove(coords) {
+        const sel = this.selection;
+        const x = Math.round(sel.x);
+        const y = Math.round(sel.y);
+        const w = Math.round(sel.width);
+        const h = Math.round(sel.height);
+        if (w < 2 || h < 2) return false;
+
+        const float = document.createElement('canvas');
+        float.width = w;
+        float.height = h;
+        float.getContext('2d').drawImage(this.canvas, x, y, w, h, 0, 0, w, h);
+
+        // 원래 자리를 흰색으로 비운 상태를 기준 화면으로 저장하고, 그 위에 잘라낸 조각을 얹는다
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillRect(x, y, w, h);
+        this.moveBaseState = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.drawImage(float, x, y);
+
+        this.moveFloatCanvas = float;
+        this.moveOriginX = x;
+        this.moveOriginY = y;
+        this.moveGrabDX = coords.x - x;
+        this.moveGrabDY = coords.y - y;
+        this.moveDragged = false;
+        this.isMovingSelection = true;
+        this.selection = { x, y, width: w, height: h };
+        this.clearOverlay();
+        this.drawSelectionPreview(x, y, w, h);
+        return true;
+    }
+
+    updateSelectionMove(coords) {
+        if (!this.isMovingSelection) return;
+        const { width, height } = this.selection;
+        const nx = Math.round(coords.x - this.moveGrabDX);
+        const ny = Math.round(coords.y - this.moveGrabDY);
+        this.ctx.putImageData(this.moveBaseState, 0, 0);
+        this.ctx.drawImage(this.moveFloatCanvas, nx, ny);
+        this.selection = { x: nx, y: ny, width, height };
+        this.clearOverlay();
+        this.drawSelectionPreview(nx, ny, width, height);
+        const dx = nx - this.moveOriginX;
+        const dy = ny - this.moveOriginY;
+        if (dx !== 0 || dy !== 0) this.moveDragged = true;
+        this.updateStatus(`이동 중: ${dx > 0 ? '+' : ''}${dx}, ${dy > 0 ? '+' : ''}${dy} px`);
+    }
+
+    finishSelectionMove() {
+        this.isMovingSelection = false;
+        this.moveFloatCanvas = null;
+        this.moveBaseState = null;
+        const dx = Math.round(this.selection.x) - this.moveOriginX;
+        const dy = Math.round(this.selection.y) - this.moveOriginY;
+        if (this.moveDragged) {
+            this.saveState();
+            this.updateStatus(`선택 영역 이동됨 (${dx > 0 ? '+' : ''}${dx}, ${dy > 0 ? '+' : ''}${dy})`);
+            this.showToast('선택 영역을 이동했습니다');
+        } else {
+            this.updateStatus('선택 영역 안쪽을 드래그하면 이동합니다');
+        }
+        this.moveDragged = false;
+    }
+
+    // ---------- 가로줄 잘라내기 (아래 내용을 위로 당김) ----------
+
+    cutBandFromSelection() {
+        if (!this.selection) { this.showToast('선택된 영역이 없습니다'); return; }
+        this.cutBand(this.selection.y, this.selection.height);
+    }
+
+    cutBand(topY, cutHeight) {
+        if (!this.hasImage) { this.showToast('이미지를 먼저 붙여넣으세요'); return; }
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+        const top = Math.max(0, Math.round(topY));
+        const cutH = Math.min(Math.round(cutHeight), h - top);
+        if (cutH < 2) { this.showToast('잘라낼 높이가 너무 작습니다'); return; }
+        const newH = h - cutH;
+        if (newH < 1) { this.showToast('이미지 전체를 잘라낼 수는 없습니다'); return; }
+
+        const src = document.createElement('canvas');
+        src.width = w;
+        src.height = h;
+        src.getContext('2d').drawImage(this.canvas, 0, 0);
+
+        this.setCanvasSize(w, newH);
+        if (top > 0) this.ctx.drawImage(src, 0, 0, w, top, 0, 0, w, top);
+        const belowH = h - (top + cutH);
+        if (belowH > 0) this.ctx.drawImage(src, 0, top + cutH, w, belowH, 0, top, w, belowH);
+
+        // 잘라낸 줄 아래에 있던 텍스트 / 마커도 같은 높이만큼 위로 당긴다
+        const shiftUp = (obj) => {
+            if (obj.y >= top + cutH) return { ...obj, y: obj.y - cutH };
+            if (obj.y > top) return { ...obj, y: top };
+            return obj;
+        };
+        this.textObjects = this.textObjects.map(shiftUp);
+        this.markerObjects = this.markerObjects.map(shiftUp);
+
+        this.selection = null;
+        this.clearOverlay();
+        this.renderTextLayer();
+        this.renderMarkerList();
+        this.saveState();
+        this.imageSize.textContent = `${w} x ${newH}`;
+        this.updateOutputSizeLabel();
+        this.updateStatus(`${cutH}px 잘라내고 아래 내용을 위로 당김`);
+        this.showToast(`${cutH}px 잘라냄 · 높이 ${h} → ${newH}`);
+    }
+
     deleteSelection() {
         if (!this.selection) { this.showToast('선택된 영역이 없습니다'); return; }
         const { x, y, width, height } = this.selection;
@@ -1528,7 +1744,7 @@ class PainterApp {
         this.saveState();
         this.selection = null;
         this.clearOverlay();
-        this.updateStatus('선택 영역 삭제됨');
+        this.updateStatus('선택 영역 삭제됨 (흰색) - SHIFT+DELETE는 잘라내고 위로 당기기');
         this.showToast('선택 영역이 삭제되었습니다');
     }
 
