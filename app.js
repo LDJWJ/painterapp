@@ -29,7 +29,6 @@ class PainterApp {
         // Selection action bar
         this.selectionActions = document.getElementById('selectionActions');
         this.selMoveBtn = document.getElementById('selMoveBtn');
-        this.selPullBtn = document.getElementById('selPullBtn');
         this.selCutBtn = document.getElementById('selCutBtn');
         this.selEraseBtn = document.getElementById('selEraseBtn');
 
@@ -253,8 +252,9 @@ class PainterApp {
             this.updateStatus('선택 영역 안쪽을 드래그하면 그대로 옮겨집니다');
             this.showToast('선택 영역 안쪽을 드래그하세요');
         });
-        this.selPullBtn.addEventListener('click', () => this.cutRegionFromSelection());
         this.selCutBtn.addEventListener('click', () => this.cutBandFromSelection());
+        this.selCutBtn.addEventListener('mouseenter', () => this.previewCutBand(true));
+        this.selCutBtn.addEventListener('mouseleave', () => this.previewCutBand(false));
         this.selEraseBtn.addEventListener('click', () => this.deleteSelection());
         window.addEventListener('resize', () => this.positionSelectionActions());
         document.querySelector('.canvas-container').addEventListener('scroll', () => this.positionSelectionActions());
@@ -636,7 +636,7 @@ class PainterApp {
                 this.showSelectionActions();
                 this.updateStatus(this.currentTool === 'move'
                     ? '영역 선택됨 - 안쪽을 드래그해 이동하거나 아래 버튼으로 실행하세요'
-                    : '영역 선택됨 - 아래 버튼 또는 DELETE / SHIFT+DELETE / ALT+DELETE');
+                    : '영역 선택됨 - 버튼으로 실행하거나 DELETE(지우기) / SHIFT+DELETE(위로 당기기)');
                 break;
             case 'cutband':
                 this.clearOverlay();
@@ -1763,7 +1763,15 @@ class PainterApp {
         this.selectionActions.style.top = `${Math.round(top)}px`;
     }
 
-    // ---------- 선택 폭 당기기 (선택한 폭 안에서만 잘라냄) ----------
+    previewCutBand(on) {
+        if (!this.selection) return;
+        const sel = this.selection;
+        this.clearOverlay();
+        if (on) this.drawBandPreview(sel.y, sel.y + sel.height);
+        else this.drawSelectionPreview(sel.x, sel.y, sel.width, sel.height);
+    }
+
+    // ---------- 선택 폭 당기기 (선택한 폭 안에서만 잘라냄 · Alt+Delete 전용) ----------
 
     cutRegionFromSelection() {
         if (!this.selection) { this.showToast('선택된 영역이 없습니다'); return; }
@@ -1875,7 +1883,7 @@ class PainterApp {
         this.selection = null;
         this.clearOverlay();
         this.hideSelectionActions();
-        this.updateStatus('선택 영역 삭제됨 (흰색) - SHIFT+DELETE는 잘라내고 위로 당기기');
+        this.updateStatus('선택 영역 삭제됨 (흰색) - SHIFT+DELETE는 위로 당기기');
         this.showToast('선택 영역이 삭제되었습니다');
     }
 
