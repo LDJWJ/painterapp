@@ -96,6 +96,7 @@ class PainterApp {
 
         // Zoom
         this.zoomLevel = 1.0;
+        this.canvasContainer = document.querySelector('.canvas-container');
         this.canvasWrapper = document.querySelector('.canvas-wrapper');
         this.zoomLevelLabel = document.getElementById('zoomLevelLabel');
 
@@ -363,6 +364,7 @@ class PainterApp {
                 const sizeMB = (file.size / 1024 / 1024).toFixed(1);
                 this.imageSize.textContent = `${img.width} x ${img.height} · 원본 ${sizeMB}MB`;
                 this.updateOutputSizeLabel();
+                this.centerCanvasView();
             };
             img.src = e.target.result;
         };
@@ -1049,6 +1051,15 @@ class PainterApp {
     }
 
     // ---------- Zoom ----------
+
+    centerCanvasView() {
+        // 이미지가 컨테이너보다 크면 flex 중앙 정렬 때문에 상단이 스크롤 밖으로 밀려 잘려 보이는 문제 보정
+        requestAnimationFrame(() => {
+            const el = this.canvasContainer;
+            el.scrollLeft = Math.max(0, (el.scrollWidth - el.clientWidth) / 2);
+            el.scrollTop = Math.max(0, (el.scrollHeight - el.clientHeight) / 2);
+        });
+    }
 
     applyZoom() {
         this.canvasWrapper.style.transform = `scale(${this.zoomLevel})`;
